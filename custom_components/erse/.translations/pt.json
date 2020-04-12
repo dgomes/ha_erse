@@ -1,0 +1,19 @@
+{
+    "config": {
+        "error": {
+            "invalid_plan": "O Plano seleccionado não existe",
+            "unknown": "Unexpected error"
+        },
+        "step": {
+            "user": {
+                "data": {
+                    "operator": "Operador",
+                    "plan": "Plano",
+                    "utility_meter": "Utility Meter"
+                },
+                "title": "Seleccione o Operador e Plano"
+            }
+        },
+        "title": "Entidade Reguladora dos Servi\u00e7os Energ\u00e9ticos"
+    }
+}

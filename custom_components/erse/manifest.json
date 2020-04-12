@@ -1,0 +1,16 @@
+{
+  "domain": "erse",
+  "name": "Entidade Reguladora dos Servi\u00e7os Energ\u00e9ticos",
+  "config_flow": true,
+  "documentation": "https://www.home-assistant.io/integrations/erse",
+  "requirements": [
+    "python-electricity==0.0.4"
+  ],
+  "ssdp": [],
+  "zeroconf": [],
+  "homekit": {},
+  "dependencies": [],
+  "codeowners": [
+    "@dgomes"
+  ]
+}
