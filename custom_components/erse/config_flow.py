@@ -63,11 +63,11 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             {
                 vol.Required(CONF_OPERATOR): vol.In(Operators[COUNTRY].keys()),
                 vol.Required(CONF_PLAN): vol.In(
-                    [
+                    list(set([
                         str(p)
                         for plans in Operators[COUNTRY].values()
                         for p in plans.tariff_periods()
-                    ]
+                    ]))
                 ),
                 vol.Required(CONF_UTILITY_METER): vol.In(
                     [
