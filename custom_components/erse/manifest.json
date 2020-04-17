@@ -6,7 +6,7 @@
   "requirements": [
     "python-electricity==0.0.4"
   ],
-  "dependencies": ["utility_meter"],
+  "after_dependencies": ["utility_meter"],
   "ssdp": [],
   "zeroconf": [],
   "homekit": {},
