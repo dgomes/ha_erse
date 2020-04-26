@@ -12,8 +12,8 @@ You can use a config flow (Configuration -> Integration) or you can setup throug
 ## Configuration example
 
 ```yaml
-erse:
-  home:
+sensor:
+  - platform: erse
     operator: EDP
     plan: Bi-horário - ciclo diário
     utility_meters:
