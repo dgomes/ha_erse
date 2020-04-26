@@ -22,6 +22,7 @@ from homeassistant.helpers.event import async_track_time_change
 from homeassistant.util import dt as dt_util
 
 from .const import (
+    DOMAIN,
     CONF_OPERATOR,
     CONF_PLAN,
     CONF_UTILITY_METER,
@@ -33,13 +34,11 @@ _LOGGER = logging.getLogger(__name__)
 
 ATTR_TARIFFS = "tariffs"
 
-DOMAIN = "electricity"
-
 ICON = "mdi:transmission-tower"
 
 UTILITY_METER_NAME_FORMAT = "{} {}"
 
-PLATFORM_SCHEMA = vol.Schema(
+PLATFORM_SCHEMA = cv.PLATFORM_SCHEMA.extend(
     {
         vol.Required(CONF_OPERATOR): vol.In(Operators[COUNTRY].keys()),
         vol.Required(CONF_PLAN): vol.In(
@@ -56,13 +55,12 @@ PLATFORM_SCHEMA = vol.Schema(
 )
 
 
-async def async_setup(hass, config, async_add_entities):
+async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
     """Set up an electricity monitor."""
     entities = []
 
-    for name, cfg in config[DOMAIN].items():
-        _LOGGER.debug(name, cfg)
-        entities.append(EletricityEntity(name, cfg))
+
+    entities.append(EletricityEntity(config[CONF_OPERATOR], config))
 
     async_add_entities(entities)
 
