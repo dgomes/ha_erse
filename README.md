@@ -17,7 +17,7 @@ sensor:
     operator: EDP
     plan: Bi-horário - ciclo diário
     utility_meters:
-    - utility_meter.totalizador
+      - utility_meter.totalizador
 ```
 
 Please note that using YAML a single `erse` entity can automate several utility_meters. Using the UI you will have to create multiple `erse` entities.
