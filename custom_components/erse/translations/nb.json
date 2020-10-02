@@ -1,0 +1,18 @@
+{
+    "config": {
+        "error": {
+            "invalid_plan": "Vi finner ikke en slik plan.",
+            "unknown": "Uventet feil"
+        },
+        "step": {
+            "user": {
+                "data": {
+                    "operator": "Operatør",
+                    "plan": "Plan"
+                },
+                "title": "Sett opp din operatør og plan"
+            }
+        },
+        "title": "Regulerende enhet for energitjenester"
+    }
+}
