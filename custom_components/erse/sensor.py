@@ -125,7 +125,9 @@ class EletricityEntity(Entity):
 
     @property
     def unique_id(self):
-        return slugify(self.operator + self.my_plan + str(self.utility_meters))
+        return slugify(
+            str(self.operator) + str(self.my_plan) + str(self.utility_meters)
+        )
 
     @property
     def icon(self):

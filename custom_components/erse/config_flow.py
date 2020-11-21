@@ -6,6 +6,7 @@ import voluptuous as vol
 
 from homeassistant import config_entries, core, exceptions
 from homeassistant.util import slugify
+import homeassistant.helpers.config_validation as cv
 
 from .const import (  # pylint:disable=unused-import
     CONF_OPERATOR,
@@ -63,13 +64,17 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             {
                 vol.Required(CONF_OPERATOR): vol.In(Operators[COUNTRY].keys()),
                 vol.Required(CONF_PLAN): vol.In(
-                    list(set([
-                        str(p)
-                        for plans in Operators[COUNTRY].values()
-                        for p in plans.tariff_periods()
-                    ]))
+                    list(
+                        set(
+                            [
+                                str(p)
+                                for plans in Operators[COUNTRY].values()
+                                for p in plans.tariff_periods()
+                            ]
+                        )
+                    )
                 ),
-                vol.Required(CONF_UTILITY_METER): vol.In(
+                vol.Required(CONF_UTILITY_METER): cv.multi_select(
                     [
                         s.entity_id
                         for s in self.hass.states.async_all()
