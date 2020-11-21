@@ -20,6 +20,7 @@ import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.event import async_track_time_change
 from homeassistant.util import dt as dt_util
+from homeassistant.util import slugify
 
 from .const import (
     DOMAIN,
@@ -58,7 +59,6 @@ PLATFORM_SCHEMA = cv.PLATFORM_SCHEMA.extend(
 async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
     """Set up an electricity monitor."""
     entities = []
-
 
     entities.append(EletricityEntity(config[CONF_OPERATOR], config))
 
@@ -122,6 +122,10 @@ class EletricityEntity(Entity):
     def state(self):
         """Return the state as the current tariff."""
         return self._state
+
+    @property
+    def unique_id(self):
+        return slugify(self.operator + self.my_plan + str(self.utility_meters))
 
     @property
     def icon(self):
