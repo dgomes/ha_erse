@@ -58,11 +58,8 @@ PLATFORM_SCHEMA = cv.PLATFORM_SCHEMA.extend(
 
 async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
     """Set up an electricity monitor."""
-    entities = []
 
-    entities.append(EletricityEntity(config[CONF_OPERATOR], config))
-
-    async_add_entities(entities)
+    async_add_entities([EletricityEntity(config[CONF_OPERATOR], config)])
 
 
 async def async_setup_entry(hass, config_entry, async_add_entities):
@@ -102,6 +99,7 @@ class EletricityEntity(Entity):
             await self.async_update_ha_state()
 
             for utility_meter in self.utility_meters:
+                _LOGGER.debug("Change %s to %s", utility_meter, self._state)
                 await self.hass.services.async_call(
                     UTILITY_METER_DOMAIN,
                     SERVICE_SELECT_TARIFF,
