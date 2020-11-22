@@ -4,7 +4,7 @@
   "config_flow": true,
   "documentation": "https://www.home-assistant.io/integrations/erse",
   "requirements": [
-    "python-electricity==0.0.4"
+    "python-electricity==0.0.5"
   ],
   "after_dependencies": ["utility_meter"],
   "ssdp": [],
