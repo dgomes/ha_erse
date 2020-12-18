@@ -139,5 +139,5 @@ class EletricityEntity(Entity):
         attr = dict()
         if self._tariffs:
             attr[ATTR_TARIFFS] = self._tariffs
-        attr[ATTR_UTILITY_METERS] = self.utility_meters
+        attr[ATTR_UTILITY_METERS] = [m for meter in self.utility_meters for m in meter]
         return attr
