@@ -50,7 +50,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
                 return self.async_create_entry(
                     title=slugify(
-                        f"{info[CONF_OPERATOR]} - {info[CONF_PLAN]} - {info[CONF_UTILITY_METERS][0]}"
+                        f"{info[CONF_OPERATOR]} - {info[CONF_PLAN]}"
                     ),
                     data=info,
                 )
