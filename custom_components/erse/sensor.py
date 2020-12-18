@@ -34,6 +34,7 @@ from .const import (
 _LOGGER = logging.getLogger(__name__)
 
 ATTR_TARIFFS = "tariffs"
+ATTR_UTILITY_METERS = "utility meters"
 
 ICON = "mdi:transmission-tower"
 
@@ -135,7 +136,8 @@ class EletricityEntity(Entity):
     @property
     def device_state_attributes(self):
         """Return the state attributes."""
+        attr = dict()
         if self._tariffs:
-            return {
-                ATTR_TARIFFS: self._tariffs,
-            }
+            attr[ATTR_TARIFFS] = self._tariffs
+        attr[ATTR_UTILITY_METERS] = self.utility_meters
+        return attr
