@@ -7,23 +7,16 @@ This components is for energy clients in Portugal, and fully automates the trans
 
 # Configuration
 
-You can use a config flow (Configuration -> Integration) or you can setup through yaml:
+Go to **Configuration** >> **Integrations** in the UI. Click the button with `+` sign on the integrations page and from the list of integrations, select **ERSE**.
 
-## Configuration example
+Pick your Energy Provider (EDP, GALP, Iberdrola) and the tariff plan (all plans from all operators are listed).
 
-```yaml
-sensor:
-  - platform: erse
-    operator: EDP
-    plan: Bi-horário - ciclo diário
-    utility_meters:
-      - utility_meter.totalizador
-```
+Then select which `utility_meters` are running through this electricity plan (you can choose multiple)
 
-Please note that using YAML a single `erse` entity can automate several utility_meters. Using the UI you will have to create multiple `erse` entities.
+That is it!
 
 ## Supported Plans
 
 Go to https://github.com/dgomes/python-electricity/blob/master/README.md
 
-Your operator is not there ? Open a PR or an Issue in the previous repository.
+Your operator is not there? Open a PR or an Issue in the previous repository.
