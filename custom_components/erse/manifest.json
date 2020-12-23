@@ -2,7 +2,8 @@
   "domain": "erse",
   "name": "Entidade Reguladora dos Servi\u00e7os Energ\u00e9ticos",
   "config_flow": true,
-  "documentation": "https://www.home-assistant.io/integrations/erse",
+  "documentation": "https://github.com/dgomes/ha_erse",
+  "issue_tracker": "https://github.com/dgomes/ha_erse/issues",
   "requirements": [
     "python-electricity==0.0.5"
   ],
