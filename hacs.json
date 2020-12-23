@@ -2,5 +2,6 @@
   "name": "Entidade Reguladora dos Serviços Energéticos",
   "country": "PT",
   "homeassistant": "0.87",
-  "render_readme": true
+  "render_readme": true,
+  "issue_tracker": "https://github.com/dgomes/ha_erse/issues"
 }
