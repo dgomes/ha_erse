@@ -84,8 +84,8 @@ class EletricityEntity(Entity):
 
     async def async_added_to_hass(self):
         """Setups all required entities and automations."""
-        self._state = self.my_plan.current_tariff(dt_util.now())
         async_track_time_change(self.hass, self.timer_update, minute=range(0, 60, 15))
+        await self.timer_update(dt_util.now())
 
     @callback
     async def timer_update(self, now):
