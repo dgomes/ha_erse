@@ -5,7 +5,7 @@
   "documentation": "https://github.com/dgomes/ha_erse",
   "issue_tracker": "https://github.com/dgomes/ha_erse/issues",
   "requirements": [
-    "python-electricity==0.0.5"
+    "python-electricity==0.0.6"
   ],
   "after_dependencies": ["utility_meter"],
   "ssdp": [],
