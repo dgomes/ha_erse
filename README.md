@@ -13,6 +13,12 @@ Pick your Energy Provider (EDP, GALP, Iberdrola) and the tariff plan (all plans 
 
 Then select which `utility_meters` are running through this electricity plan (you can choose multiple)
 
+**Important**
+
+Your `utility_meter must have the proper tarifs:
+- Bi-Horário: `Vazio` e `Fora de Vazio`
+- Tri-Horário: `Vazio`, `Ponta` e `Cheias`
+
 That is it!
 
 ## Supported Plans
