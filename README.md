@@ -15,7 +15,7 @@ Then select which `utility_meters` are running through this electricity plan (yo
 
 **Important**
 
-Your `utility_meter must have the proper tarifs:
+Your `utility_meter` must have the proper tarifs:
 - Bi-Horário: `Vazio` e `Fora de Vazio`
 - Tri-Horário: `Vazio`, `Ponta` e `Cheias`
 
