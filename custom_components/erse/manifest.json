@@ -7,11 +7,11 @@
   "requirements": [
     "python-electricity==0.0.6"
   ],
-  "after_dependencies": ["utility_meter"],
+  "after_dependencies": [],
   "ssdp": [],
   "zeroconf": [],
   "homekit": {},
-  "dependencies": [],
+  "dependencies": ["utility_meter"],
   "codeowners": [
     "@dgomes"
   ]
