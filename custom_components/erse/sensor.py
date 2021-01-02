@@ -14,7 +14,7 @@ from homeassistant.components.utility_meter.const import (
     DOMAIN as UTILITY_METER_DOMAIN,
     SERVICE_SELECT_TARIFF,
 )
-from homeassistant.const import ATTR_ENTITY_ID
+from homeassistant.const import ATTR_ENTITY_ID, EVENT_HOMEASSISTANT_START
 from homeassistant.core import callback
 import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.entity import Entity
@@ -29,7 +29,6 @@ from .const import (
     CONF_UTILITY_METER,
     CONF_UTILITY_METERS,
     COUNTRY,
-    EVENT_HOMEASSISTANT_START,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -88,7 +87,8 @@ class EletricityEntity(Entity):
         async_track_time_change(self.hass, self.timer_update, minute=range(0, 60, 15))
 
         @callback
-        def initial_sync(event):
+        async def initial_sync(event):
+            _LOGGER.error("Initial Sync")
             await self.timer_update(dt_util.now())
 
         self.hass.bus.async_listen_once(
