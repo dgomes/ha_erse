@@ -29,6 +29,7 @@ from .const import (
     CONF_UTILITY_METER,
     CONF_UTILITY_METERS,
     COUNTRY,
+    EVENT_HOMEASSISTANT_START,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -85,7 +86,14 @@ class EletricityEntity(Entity):
     async def async_added_to_hass(self):
         """Setups all required entities and automations."""
         async_track_time_change(self.hass, self.timer_update, minute=range(0, 60, 15))
-        await self.timer_update(dt_util.now())
+
+        @callback
+        def initial_sync(event):
+            await self.timer_update(dt_util.now())
+
+        self.hass.bus.async_listen_once(
+            EVENT_HOMEASSISTANT_START, initial_sync
+        )
 
     @callback
     async def timer_update(self, now):
