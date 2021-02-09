@@ -3,16 +3,20 @@
     "title": "Entidade Reguladora dos Servi\u00e7os Energ\u00e9ticos",
     "step": {
       "user": {
-        "title": "Setup your Operator and plan",
+        "title": "Which is your Operator",
         "data": {
-          "operator": "Operator",
+          "operator": "Operator"
+        }
+      },
+      "finish": {
+        "title": "Choose your plan and Utility Meter",
+        "data": {
           "plan": "Plan",
-          "source": "Energy Sensor"
+          "utility_meter": "Utility Meter"
         }
       }
     },
     "error": {
-      "invalid_plan": "The operator you chose, does not support that plan.",
       "unknown": "Unexpected error"
     }
   }

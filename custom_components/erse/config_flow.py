@@ -40,12 +40,29 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     # TODO pick one of the available connection classes in homeassistant/config_entries.py
     CONNECTION_CLASS = config_entries.CONN_CLASS_UNKNOWN
 
+
     async def async_step_user(self, user_input=None):
+        """Handle choice of tarifario."""
+        if user_input is None:
+            return self.async_show_form(
+                step_id="user",
+                data_schema=vol.Schema(
+                    {                
+                        vol.Required(CONF_OPERATOR): vol.In(Operators[COUNTRY].keys()),
+                    }
+                ),
+            )
+        
+        self.operator = user_input[CONF_OPERATOR]
+        return await self.async_step_finish()
+
+    async def async_step_finish(self, user_input=None):
         """Handle the initial step."""
         errors = {}
 
         if user_input is not None:
             try:
+                user_input[CONF_OPERATOR] = self.operator
                 info = await validate_input(self.hass, user_input)
 
                 return self.async_create_entry(
@@ -62,14 +79,12 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         DATA_SCHEMA = vol.Schema(
             {
-                vol.Required(CONF_OPERATOR): vol.In(Operators[COUNTRY].keys()),
                 vol.Required(CONF_PLAN): vol.In(
                     list(
                         set(
                             [
                                 str(p)
-                                for plans in Operators[COUNTRY].values()
-                                for p in plans.tariff_periods()
+                                for p in Operators[COUNTRY][self.operator].tariff_periods()
                             ]
                         )
                     )
@@ -85,7 +100,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         )
 
         return self.async_show_form(
-            step_id="user", data_schema=DATA_SCHEMA, errors=errors
+            step_id="finish", data_schema=DATA_SCHEMA, errors=errors
         )
 
 

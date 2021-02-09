@@ -1,16 +1,21 @@
 {
     "config": {
         "error": {
-            "invalid_plan": "We cannot find such plan.",
             "unknown": "Unexpected error"
         },
         "step": {
+            "finish": {
+                "data": {
+                    "plan": "Plan",
+                    "utility_meter": "Utility Meter"
+                },
+                "title": "Choose your plan and Utility Meter"
+            },
             "user": {
                 "data": {
-                    "operator": "Operator",
-                    "plan": "Plan"
+                    "operator": "Operator"
                 },
-                "title": "Setup your Operator and plan"
+                "title": "Which is your Operator"
             }
         },
         "title": "Entidade Reguladora dos Servi\u00e7os Energ\u00e9ticos"
