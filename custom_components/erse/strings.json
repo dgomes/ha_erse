@@ -8,11 +8,21 @@
           "operator": "Operator"
         }
       },
-      "finish": {
-        "title": "Choose your plan and Utility Meter",
+      "plan": {
+        "title": "Choose your plan",
         "data": {
           "plan": "Plan",
           "utility_meter": "Utility Meter"
+        }
+      },
+      "finish": {
+        "title": "Choose your Utility Meter and provide costs",
+        "data": {
+          "utility_meter": "Utility Meter",
+          "cost_normal": "Energy (€/kWh)",
+          "cost_potencia": "Power Availability Cost (€/day)",
+          "cost_vazio": "Energy Vazio (€/kWh)",
+          "cost_fora_de_vazio": "Energy Fora do Vazio (€/kWh)"
         }
       }
     },

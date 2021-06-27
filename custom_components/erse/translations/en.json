@@ -4,10 +4,9 @@
             "unknown": "Unexpected error"
         },
         "step": {
-            "finish": {
+            "plan": {
                 "data": {
-                    "plan": "Plan",
-                    "utility_meter": "Utility Meter"
+                    "plan": "Plan"
                 },
                 "title": "Choose your plan and Utility Meter"
             },
@@ -16,6 +15,15 @@
                     "operator": "Operator"
                 },
                 "title": "Which is your Operator"
+            }, 
+            "cost": {
+                "data": {
+                    "utility_meter": "Utility Meter", 
+                    "cost_potencia": "Power (€/day)",
+                    "cost_vazio": "Energy Vazio (€/kWh)",
+                    "cost_fora_de_vazio": "Energy Fora de Vazio (€/kWh)"
+                },
+                "title": "Choose your Utility Meter and provide costs"
             }
         },
         "title": "Entidade Reguladora dos Servi\u00e7os Energ\u00e9ticos"
