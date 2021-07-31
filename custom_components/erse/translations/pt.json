@@ -22,7 +22,8 @@
                 "data": {
                     "power_cost": "Custo Potência (diário)",
                     "Vazio": "Vazio",
-                    "Fora de Vazio": "Fora de Vazio"
+                    "Fora de Vazio": "Fora de Vazio",
+                    "Normal": "Normal"
                 },
                 "title": "Costs"
             }

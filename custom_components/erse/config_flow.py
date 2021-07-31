@@ -1,18 +1,17 @@
 """Config flow for Entidade Reguladora dos Serviços Energéticos integration."""
 import logging
 
-from electricity.tariffs import Operators
+import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
-
+from electricity.tariffs import Operators
 from homeassistant import config_entries, core, exceptions
 from homeassistant.util import slugify
-import homeassistant.helpers.config_validation as cv
 
-from .const import (  # pylint:disable=unused-import
+from .const import CONF_METER  # pylint:disable=unused-import
+from .const import (
+    CONF_COST,
     CONF_OPERATOR,
     CONF_PLAN,
-    CONF_METER,
-    CONF_COST,
     CONF_POWER_COST,
     CONF_UTILITY_METER,
     CONF_UTILITY_METERS,
@@ -64,9 +63,13 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         if user_input is not None:
             try:
-                self.plan = user_input[CONF_PLAN] 
+                self.plan = user_input[CONF_PLAN]
                 self.my_plan = Operators[COUNTRY][self.operator](plan=self.plan)
-                self._tariffs = self.my_plan.tariffs() if isinstance(self.my_plan.tariffs(), list) else [self.my_plan.tariffs()] #TODO python-electricity should always return lists
+                self._tariffs = (
+                    self.my_plan.tariffs()
+                    if isinstance(self.my_plan.tariffs(), list)
+                    else [self.my_plan.tariffs()]
+                )  # TODO python-electricity should always return lists
                 self.utility_meters = user_input[CONF_UTILITY_METERS]
 
                 return await self.async_step_costs()
@@ -108,30 +111,27 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     async def async_step_costs(self, user_input=None):
         """Handle the costs of each tariff"""
         errors = {}
-        
+
         if user_input is not None:
             info = {
                 CONF_OPERATOR: self.operator,
                 CONF_PLAN: self.plan,
                 CONF_UTILITY_METERS: self.utility_meters,
                 CONF_COST: {tariff: user_input[tariff] for tariff in self._tariffs},
-                CONF_POWER_COST: user_input[CONF_POWER_COST]
+                CONF_POWER_COST: user_input[CONF_POWER_COST],
             }
 
             return self.async_create_entry(
                 title=slugify(f"{self.operator} - {self.plan}"),
                 data=info,
             )
-        
 
-        DATA_SCHEMA = vol.Schema({
-            **{
-                vol.Required(CONF_POWER_COST): float
-            }, 
-            **{
-                vol.Required(tariff): float for tariff in self._tariffs
+        DATA_SCHEMA = vol.Schema(
+            {
+                **{vol.Required(CONF_POWER_COST): float},
+                **{vol.Required(tariff): float for tariff in self._tariffs},
             }
-        })
+        )
         return self.async_show_form(
             step_id="costs", data_schema=DATA_SCHEMA, errors=errors
         )
