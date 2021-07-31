@@ -17,15 +17,14 @@
                     "operator": "Operador"
                 },
                 "title": "Qual é o seu Operador"
-            }, 
-            "cost": {
+            },
+            "costs": {
                 "data": {
-                    "utility_meter": "Utility Meter", 
-                    "cost_potencia": "Potência (€/dia)",
-                    "cost_vazio": "Energia Vazio (€/kWh)",
-                    "cost_fora_de_vazio": "Energia Fora de Vazio (€/kWh)"
+                    "power_cost": "Custo Potência (diário)",
+                    "Vazio": "Vazio",
+                    "Fora de Vazio": "Fora de Vazio"
                 },
-                "title": "Escolha o Utility Meter e informe custos"
+                "title": "Costs"
             }
         },
         "title": "Entidade Reguladora dos Servi\u00e7os Energ\u00e9ticos"

@@ -4,9 +4,18 @@
             "unknown": "Unexpected error"
         },
         "step": {
+            "costs": {
+                "data": {
+                    "power_cost": "Cost of Power (day)",
+                    "Vazio": "Vazio",
+                    "Fora de Vazio": "Fora de Vazio"
+                },
+                "title": "Costs"
+            },
             "plan": {
                 "data": {
-                    "plan": "Plan"
+                    "plan": "Plan",
+                    "utility_meter": "Utility Meter"
                 },
                 "title": "Choose your plan and Utility Meter"
             },
@@ -15,15 +24,6 @@
                     "operator": "Operator"
                 },
                 "title": "Which is your Operator"
-            }, 
-            "cost": {
-                "data": {
-                    "utility_meter": "Utility Meter", 
-                    "cost_potencia": "Power (€/day)",
-                    "cost_vazio": "Energy Vazio (€/kWh)",
-                    "cost_fora_de_vazio": "Energy Fora de Vazio (€/kWh)"
-                },
-                "title": "Choose your Utility Meter and provide costs"
             }
         },
         "title": "Entidade Reguladora dos Servi\u00e7os Energ\u00e9ticos"
