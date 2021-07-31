@@ -60,12 +60,17 @@ ICON = "mdi:transmission-tower"
 UTILITY_METER_NAME_FORMAT = "{} {}"
 
 IVA = 0.23
+IVA_REDUZIDA = 0.06
+IVA_INTERMEDIA = 0.13
 TERMO_FIXO_ACESSO_REDES = 0.2959
+TAXA_DGEG = 0.07
+IMPOSTO_ESPECIAL_DE_CONSUMO = 0.001
+CONTRIB_AUDIOVISUAL = 2.85
 
 DISCOUNT = {
-    "Vazio": (40, 0.13),
-    "Fora de Vazio": (60, 0.13),
-    "Normal": (100, 0.13)
+    "Vazio": (40, IVA_INTERMEDIA),
+    "Fora de Vazio": (60, IVA_INTERMEDIA),
+    "Normal": (100, IVA_INTERMEDIA)
 }
 
 PLATFORM_SCHEMA = cv.PLATFORM_SCHEMA.extend(
@@ -144,7 +149,7 @@ class TariffCost(SensorEntity):
             if kwh == 0:
                 self._attr_last_reset = dt_util.now()
 
-            total = 0
+            total = kwh * IMPOSTO_ESPECIAL_DE_CONSUMO * (1+IVA)
             if kwh > self._discount_kwh:
                 total += float(self._kwh_cost) * (float(kwh)-self._discount_kwh) * (1+IVA)
                 kwh = self._discount_kwh
@@ -196,7 +201,7 @@ class FixedCost(SensorEntity):
         if elapsed.days == 0:
             self._attr_last_reset = now
 
-        self._attr_state = (elapsed.days+1) * (TERMO_FIXO_ACESSO_REDES + self._power_cost)
+        self._attr_state = ((elapsed.days+1) * (TERMO_FIXO_ACESSO_REDES + self._power_cost) + TAXA_DGEG) * (1+IVA) + CONTRIB_AUDIOVISUAL * (1+IVA_REDUZIDA)
 
 class EletricityEntity(Entity):
     """Representation of an Electricity Contract."""
