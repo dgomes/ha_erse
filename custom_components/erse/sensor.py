@@ -122,8 +122,10 @@ class TariffCost(SensorEntity):
             new_state = event.data.get("new_state")
             calc_costs(new_state.state)
 
-        async_track_state_change_event(
-            self.hass, [self._meter_entity], async_increment_cost
+        self.async_on_remove(
+            async_track_state_change_event(
+                self.hass, [self._meter_entity], async_increment_cost
+            )
         )
 
         @callback
@@ -153,8 +155,11 @@ class FixedCost(SensorEntity):
 
     async def async_added_to_hass(self):
         """Setups all required entities and automations."""
-        async_track_time_change(
-            self.hass, self.timer_update, hour=[0], minute=[0], second=[0]
+
+        self.async_on_remove(
+            async_track_time_change(
+                self.hass, self.timer_update, hour=[0], minute=[0], second=[0]
+            )
         )
 
         @callback
@@ -199,7 +204,10 @@ class EletricityEntity(Entity):
 
     async def async_added_to_hass(self):
         """Setups all required entities and automations."""
-        async_track_time_change(self.hass, self.timer_update, minute=range(0, 60, 15))
+
+        self.async_on_remove(
+            async_track_time_change(self.hass, self.timer_update, minute=range(0, 60, 15))
+        )
 
         @callback
         async def initial_sync(event):
