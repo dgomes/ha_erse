@@ -1,12 +1,12 @@
 {
-  "version": "1.0.3",
+  "version": "2.0.0",
   "domain": "erse",
   "name": "Entidade Reguladora dos Servi\u00e7os Energ\u00e9ticos",
   "config_flow": true,
   "documentation": "https://github.com/dgomes/ha_erse",
   "issue_tracker": "https://github.com/dgomes/ha_erse/issues",
   "requirements": [
-    "python-electricity==0.0.7"
+    "pyerse==0.0.1"
   ],
   "after_dependencies": [],
   "ssdp": [],

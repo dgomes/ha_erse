@@ -3,7 +3,11 @@
 DOMAIN = "erse"
 COUNTRY = "Portugal"
 CONF_OPERATOR = "operator"
+
+CONF_INSTALLED_POWER = "installed_power"
 CONF_PLAN = "plan"
+CONF_CYCLE = "cycle"
+
 CONF_METER = "meter"
 CONF_COST = "cost"
 CONF_POWER_COST = "power_cost"

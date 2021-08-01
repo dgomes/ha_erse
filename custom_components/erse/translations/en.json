@@ -7,22 +7,24 @@
             "costs": {
                 "data": {
                     "power_cost": "Cost of Power (day)",
-                    "Vazio": "Vazio",
-                    "Fora de Vazio": "Fora de Vazio",
-                    "Normal": "Normal"
+                    "Tarifa.VAZIO": "Cost of kWh in Vazio",
+                    "Tarifa.FORA_DE_VAZIO": "Cost of kWh in Fora de Vazio",
+                    "Tarifa.NORMAL": "Cost of kWh in Normal"
                 },
-                "title": "Costs"
+                "title": "Personalize Costs"
             },
-            "plan": {
+            "utility_meter": {
+                "title": "Utility meters you want to control",
                 "data": {
-                    "plan": "Plan",
-                    "utility_meter": "Utility Meter"
-                },
-                "title": "Choose your plan and Utility Meter"
+                  "utility_meter": "Utility Meter"
+                }
             },
             "user": {
                 "data": {
-                    "operator": "Operator"
+                    "operator": "Operator",
+                    "installed_power": "Installed Power",
+                    "plan": "Plan",
+                    "cycle": "Cycle"
                 },
                 "title": "Which is your Operator"
             }

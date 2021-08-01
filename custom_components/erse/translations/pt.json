@@ -1,20 +1,21 @@
 {
     "config": {
         "error": {
-            "invalid_plan": "O Plano seleccionado não existe",
             "unknown": "Unexpected error"
         },
         "step": {
-            "plan": {
+            "utility_meter": {
                 "data": {
-                    "plan": "Plano",
                     "utility_meter": "Utility Meter"
                 },
                 "title": "Escolha o seu plano e Utility Meter"
             },
             "user": {
                 "data": {
-                    "operator": "Operador"
+                    "operator": "Operador",
+                    "installed_power": "Installed Power",
+                    "plan": "Plan",
+                    "cycle": "Cycle"
                 },
                 "title": "Qual é o seu Operador"
             },
