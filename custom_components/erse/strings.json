@@ -21,6 +21,8 @@
           "power_cost": "Cost of Power (day)",
           "Vazio": "Vazio",
           "Fora de Vazio": "Fora de Vazio",
+          "Cheias": "Cheias",
+          "Ponta": "Ponta",
           "Normal": "Normal"
         }
       }

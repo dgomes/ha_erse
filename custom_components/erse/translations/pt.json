@@ -23,6 +23,8 @@
                     "power_cost": "Custo Potência (diário)",
                     "Vazio": "Vazio",
                     "Fora de Vazio": "Fora de Vazio",
+                    "Cheias": "Cheias",
+                    "Ponta": "Ponta",
                     "Normal": "Normal"
                 },
                 "title": "Costs"
