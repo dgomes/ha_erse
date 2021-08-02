@@ -20,12 +20,12 @@
             },
             "costs": {
                 "data": {
-                    "power_cost": "Custo Potência (diário)",
-                    "Vazio": "Vazio",
-                    "Fora de Vazio": "Fora de Vazio",
-                    "Cheias": "Cheias",
-                    "Ponta": "Ponta",
-                    "Normal": "Normal"
+                    "power_cost": "Custo Potência €/Dia",
+                    "Vazio": "Custo em €/kWh para Vazio",
+                    "Fora de Vazio": "Custo em €/kWh para Fora de Vazio",
+                    "Cheias": "Custo em €/kWh para Cheias",
+                    "Ponta": "Custo em €/kWh para Ponta",
+                    "Normal": "Custo em €/kWh"
                 },
                 "title": "Costs"
             }

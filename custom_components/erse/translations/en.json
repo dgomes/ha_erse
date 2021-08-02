@@ -6,12 +6,12 @@
         "step": {
             "costs": {
                 "data": {
-                    "power_cost": "Cost of Power (day)",
-                    "Vazio": "Vazio",
-                    "Fora de Vazio": "Fora de Vazio",
-                    "Cheias": "Cheias",
-                    "Ponta": "Ponta",
-                    "Normal": "Normal"
+                    "power_cost": "Cost of Power €/Day",
+                    "Vazio": "Cost in €/kWh for Vazio",
+                    "Fora de Vazio": "Cost in €/kWh for Fora de Vazio",
+                    "Cheias": "Cost in €/kWh for Cheias",
+                    "Ponta": "Cost in €/kWh for Ponta",
+                    "Normal": "Cost in €/kWh"
                 },
                 "title": "Costs"
             },
