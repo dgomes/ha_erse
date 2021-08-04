@@ -23,4 +23,6 @@ DISCOUNT = {
     "Vazio": (40, IVA_INTERMEDIA),
     "Fora de Vazio": (60, IVA_INTERMEDIA),
     "Normal": (100, IVA_INTERMEDIA),
+    "Ponta": (42.9, IVA_INTERMEDIA),
+    "Cheias": (42.9, IVA_INTERMEDIA),
 }
