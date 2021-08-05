@@ -6,13 +6,6 @@ at http://github.com/dgomes/home-assistant-custom-components/electricity/
 """
 import logging
 
-from pyerse.comercializador import (
-    Plano,
-    Opcao_Horaria,
-    PlanoException,
-    Tarifa,
-    Comercializador,
-)
 from homeassistant.components.sensor import (
     ATTR_LAST_RESET,
     DEVICE_CLASS_MONETARY,
@@ -22,7 +15,7 @@ from homeassistant.components.sensor import (
 from homeassistant.components.utility_meter.const import ATTR_TARIFF
 from homeassistant.components.utility_meter.const import DOMAIN as UTILITY_METER_DOMAIN
 from homeassistant.components.utility_meter.const import SERVICE_SELECT_TARIFF
-from homeassistant.const import ATTR_ENTITY_ID, CURRENCY_EURO, EVENT_HOMEASSISTANT_START
+from homeassistant.const import ATTR_ENTITY_ID, CURRENCY_EURO, EVENT_HOMEASSISTANT_START, ATTR_UNIT_OF_MEASUREMENT, ENERGY_WATT_HOUR, ENERGY_KILO_WATT_HOUR
 from homeassistant.core import callback
 from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.event import (
@@ -116,8 +109,13 @@ class TariffCost(SensorEntity):
         @callback
         async def initial_sync(event):
             meter_state = self.hass.states.get(self._meter_entity)
-            if meter_state:
-                calc_costs(meter_state.state)
+            if meter_state and meter_state.attributes[ATTR_UNIT_OF_MEASUREMENT] in [ENERGY_WATT_HOUR, ENERGY_KILO_WATT_HOUR]:
+                if meter_state.attributes[ATTR_UNIT_OF_MEASUREMENT] == ENERGY_WATT_HOUR:
+                    calc_costs(float(meter_state.state) / 1000)
+                else:
+                    calc_costs(meter_state.state)
+            else:
+                _LOGGER.error("Could not retrieve tariff sensor state or the sensor is not an energy sensor (wrong unit)")
 
         self.hass.bus.async_listen_once(EVENT_HOMEASSISTANT_START, initial_sync)
 
