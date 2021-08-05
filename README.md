@@ -9,9 +9,11 @@ This components is for energy clients in Portugal, and fully automates the trans
 
 Go to **Configuration** >> **Integrations** in the UI. Click the button with `+` sign on the integrations page and from the list of integrations, select **ERSE**.
 
-Pick your Energy Provider (EDP, GALP, Iberdrola) and the tariff plan (all plans from all operators are listed).
+Type in your Energy Provider (EDP, GALP, Iberdrola), Power installed and the tariff plan and cycle (default is Ciclo Diário).
 
-Then select which `utility_meters` are running through this electricity plan (you can choose multiple)
+Then select which `utility_meters` are running through this electricity plan (this is optional and is only necessary to automate tariff change of the `utility_meter`)
+
+Finally you must type in the cost in Euros of power availability and tariffs (Euro/kWh) as well as the entities that track each tariff.
 
 **Important**
 
