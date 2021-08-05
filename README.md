@@ -1,7 +1,7 @@
 # ha_erse
 Home Assistant Custom Component for ERSE (Entidade Reguladora dos Serviços Energéticos)
 
-This component provides the current tariff of a given electricity operator
+This component provides the current tariff of a given electricity operator as well as a simulation of the costs associated.
 
 This components is for energy clients in Portugal, and fully automates the transitions of tariffs of a utility_meter.
 
