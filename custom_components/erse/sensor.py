@@ -15,7 +15,14 @@ from homeassistant.components.sensor import (
 from homeassistant.components.utility_meter.const import ATTR_TARIFF
 from homeassistant.components.utility_meter.const import DOMAIN as UTILITY_METER_DOMAIN
 from homeassistant.components.utility_meter.const import SERVICE_SELECT_TARIFF
-from homeassistant.const import ATTR_ENTITY_ID, CURRENCY_EURO, EVENT_HOMEASSISTANT_START, ATTR_UNIT_OF_MEASUREMENT, ENERGY_WATT_HOUR, ENERGY_KILO_WATT_HOUR
+from homeassistant.const import (
+    ATTR_ENTITY_ID,
+    CURRENCY_EURO,
+    EVENT_HOMEASSISTANT_START,
+    ATTR_UNIT_OF_MEASUREMENT,
+    ENERGY_WATT_HOUR,
+    ENERGY_KILO_WATT_HOUR,
+)
 from homeassistant.core import callback
 from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.event import (
@@ -26,6 +33,7 @@ from homeassistant.util import dt as dt_util
 from homeassistant.util import slugify
 
 from .const import (
+    CONF_METER_SUFFIX,
     CONF_UTILITY_METER,
     DOMAIN,
 )
@@ -45,23 +53,21 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 
     pprint.pprint(config_entry.data)
 
-    entities = [
-        EletricityEntity(
-            hass, config_entry.entry_id, config_entry.data[CONF_UTILITY_METER]
-        )
-    ]
+    entities = list()
 
-    for utility_meter in config_entry.data[CONF_UTILITY_METER]:
-        meter_entity_template = f"{utility_meter[14:]}"
-
-        for tariff in hass.data[DOMAIN][config_entry.entry_id].plano.tarifas:
-            meter_entity = "sensor." + slugify(f"{meter_entity_template} {tariff}")
-
-            entities.append(
-                TariffCost(hass, config_entry.entry_id, tariff, meter_entity)
+    if CONF_UTILITY_METER in config_entry.data:
+        entities.append(
+            EletricityEntity(
+                hass, config_entry.entry_id, config_entry.data[CONF_UTILITY_METER]
             )
+        )
 
-        entities.append(FixedCost(hass, config_entry.entry_id, meter_entity))
+    for tariff in hass.data[DOMAIN][config_entry.entry_id].plano.tarifas:
+        meter_entity = config_entry.data[f"{tariff.name}{CONF_METER_SUFFIX}"]
+
+        entities.append(TariffCost(hass, config_entry.entry_id, tariff, meter_entity))
+
+    entities.append(FixedCost(hass, config_entry.entry_id, meter_entity))
 
     async_add_entities(entities)
 
@@ -78,8 +84,8 @@ class TariffCost(SensorEntity):
         self._attr_unit_of_measurement = CURRENCY_EURO
         self._attr_last_reset = dt_util.utc_from_timestamp(0)
 
-        self._attr_name = f"{meter_entity} cost"
-        self._attr_unique_id = slugify(f"{meter_entity} cost")
+        self._attr_name = f"{self.operator} {tariff} cost"
+        self._attr_unique_id = slugify(f"{self.operator} {meter_entity} {tariff} cost")
 
         self._tariff = tariff
         self._meter_entity = meter_entity
@@ -90,18 +96,29 @@ class TariffCost(SensorEntity):
 
         def calc_costs(meter_state):
 
-            if meter_state and meter_state.attributes[ATTR_UNIT_OF_MEASUREMENT] in [ENERGY_WATT_HOUR, ENERGY_KILO_WATT_HOUR]:
+            if meter_state and meter_state.attributes[ATTR_UNIT_OF_MEASUREMENT] in [
+                ENERGY_WATT_HOUR,
+                ENERGY_KILO_WATT_HOUR,
+            ]:
                 if meter_state.attributes[ATTR_UNIT_OF_MEASUREMENT] == ENERGY_WATT_HOUR:
                     kwh = float(meter_state.state) / 1000
                 else:
                     kwh = float(meter_state.state)
             else:
-                _LOGGER.error("Could not retrieve tariff sensor state or the sensor is not an energy sensor (wrong unit)")
+                _LOGGER.error(
+                    "Could not retrieve tariff sensor state or the sensor is not an energy sensor (wrong unit)"
+                )
                 kwh = 0
 
             self._attr_state = self.operator.plano.custo_kWh_final(self._tariff, kwh)
 
-            _LOGGER.debug("{%s} calc_costs(%s) = %s using %s", self._attr_name, kwh, self._attr_state, self.operator.plano._custo)
+            _LOGGER.debug(
+                "{%s} calc_costs(%s) = %s using %s",
+                self._attr_name,
+                kwh,
+                self._attr_state,
+                self.operator.plano._custo,
+            )
 
         @callback
         async def async_increment_cost(event):
@@ -135,7 +152,7 @@ class FixedCost(SensorEntity):
         self._attr_last_reset = dt_util.utc_from_timestamp(0)
 
         self._attr_name = f"{self.operator} cost"
-        self._attr_unique_id = slugify(f"{self.operator} cost")
+        self._attr_unique_id = slugify(f"{self.operator} fixed cost")
 
         self._meter = any_meter
 

@@ -26,9 +26,14 @@
                     "FORA_DE_VAZIO": "Custo do kWh em Fora de Vazio",
                     "NORMAL": "Custo do kWh em Normal",
                     "CHEIAS": "Custo do kWh em Cheias",
-                    "PONTA": "Custo do kWh em Ponta"
+                    "PONTA": "Custo do kWh em Ponta",
+                    "VAZIO meter": "Sensor a medir Vazio",
+                    "FORA_DE_VAZIO meter": "Sensor a medir Fora de Vazio",
+                    "NORMAL meter": "Sensor a medir Normal",
+                    "CHEIAS meter": "Sensor a medir Cheias",
+                    "PONTA meter": "Sensor a medir Ponta"
                 },
-                "title": "Costs"
+                "title": "Custos e Sensores"
             }
         },
         "title": "Entidade Reguladora dos Servi\u00e7os Energ\u00e9ticos"

@@ -25,7 +25,12 @@
           "FORA_DE_VAZIO": "Cost of kWh in Fora de Vazio",
           "NORMAL": "Cost of kWh in Normal",
           "CHEIAS": "Cost of kWh in Cheias",
-          "PONTA": "Cost of kWh in Ponta"
+          "PONTA": "Cost of kWh in Ponta",
+          "VAZIO meter": "Sensor tracking Vazio",
+          "FORA_DE_VAZIO meter": "Sensor tracking Fora de Vazio",
+          "NORMAL meter": "Sensor tracking Normal",
+          "CHEIAS meter": "Sensor tracking Cheias",
+          "PONTA meter": "Sensor tracking Ponta"
         }
       }
     },

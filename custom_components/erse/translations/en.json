@@ -9,9 +9,14 @@
                     "power_cost": "Cost of Power (day)",
                     "VAZIO": "Cost of kWh in Vazio",
                     "FORA_DE_VAZIO": "Cost of kWh in Fora de Vazio",
-                    "NORMAL": "Cost of kWh in Normal"
+                    "NORMAL": "Cost of kWh in Normal",
+                    "VAZIO meter": "Sensor tracking Vazio",
+                    "FORA_DE_VAZIO meter": "Sensor tracking Fora de Vazio",
+                    "NORMAL meter": "Sensor tracking Normal",
+                    "CHEIAS meter": "Sensor tracking Cheias",
+                    "PONTA meter": "Sensor tracking Ponta"
                 },
-                "title": "Personalize Costs"
+                "title": "Personalize Costs and Sensors"
             },
             "utility_meter": {
                 "title": "Utility meters you want to control",

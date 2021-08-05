@@ -1,4 +1,6 @@
 """The Entidade Reguladora dos Serviços Energéticos integration."""
+import asyncio
+
 from pyerse.comercializador import Comercializador, Tarifa
 import voluptuous as vol
 from homeassistant.config_entries import ConfigEntry

@@ -7,6 +7,7 @@ CONF_INSTALLED_POWER = "installed_power"
 CONF_PLAN = "plan"
 CONF_CYCLE = "cycle"
 
+CONF_METER_SUFFIX = " meter"
 CONF_METER = "meter"
 CONF_POWER_COST = "power_cost"
 CONF_UTILITY_METER = "utility_meter"

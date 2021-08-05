@@ -5,9 +5,13 @@ import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 from pyerse.comercializador import Comercializador
 
-from homeassistant import config_entries, core, exceptions
+from homeassistant import config_entries
 from homeassistant.core import callback
-
+from homeassistant.const import (
+    ATTR_UNIT_OF_MEASUREMENT,
+    ENERGY_WATT_HOUR,
+    ENERGY_KILO_WATT_HOUR,
+)
 
 from .const import (
     CONF_OPERATOR,
@@ -16,7 +20,7 @@ from .const import (
     CONF_CYCLE,
     CONF_POWER_COST,
     CONF_UTILITY_METER,
-    CONF_UTILITY_METERS,
+    CONF_METER_SUFFIX,
     DOMAIN,
 )
 
@@ -79,7 +83,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 step_id="utility_meter",
                 data_schema=vol.Schema(
                     {
-                        vol.Required(CONF_UTILITY_METER): cv.multi_select(
+                        vol.Optional(CONF_UTILITY_METER): vol.In(
                             [
                                 s.entity_id
                                 for s in self.hass.states.async_all()
@@ -90,7 +94,8 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 ),
             )
 
-        self.info[CONF_UTILITY_METER] = user_input[CONF_UTILITY_METER]
+        if CONF_UTILITY_METER in user_input:
+            self.info[CONF_UTILITY_METER] = user_input[CONF_UTILITY_METER]
         return await self.async_step_costs()
 
     async def async_step_costs(self, user_input=None):
@@ -103,6 +108,21 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     vol.Required(CONF_POWER_COST): float,
                     **{
                         vol.Required(tariff.name): float
+                        for tariff in self.operator.plano.tarifas
+                    },
+                    **{
+                        vol.Required(tariff.name + CONF_METER_SUFFIX): vol.In(
+                            [
+                                s.entity_id
+                                for s in self.hass.states.async_all()
+                                if s.domain == "sensor"
+                                and s.attributes.get(ATTR_UNIT_OF_MEASUREMENT)
+                                in [
+                                    ENERGY_WATT_HOUR,
+                                    ENERGY_KILO_WATT_HOUR,
+                                ]
+                            ]
+                        )
                         for tariff in self.operator.plano.tarifas
                     },
                 }
