@@ -41,7 +41,7 @@ from .const import (
 _LOGGER = logging.getLogger(__name__)
 
 ATTR_TARIFFS = "tariffs"
-ATTR_UTILITY_METERS = "utility meters"
+ATTR_UTILITY_METER = "utility meter"
 
 ICON = "mdi:transmission-tower"
 
@@ -189,14 +189,14 @@ class FixedCost(SensorEntity):
 class EletricityEntity(Entity):
     """Representation of an Electricity Tariff tracker."""
 
-    def __init__(self, hass, entry_id, utility_meters):
+    def __init__(self, hass, entry_id, utility_meter):
         """Initialize an Electricity Tariff Tracker."""
         self.operator = hass.data[DOMAIN][entry_id]
         self._attr_name = str(self.operator)
-        self.utility_meters = utility_meters
+        self.utility_meter = utility_meter
         self._state = None
         self._attr_icon = ICON
-        self._attr_unique_id = slugify(f"{self.operator} {len(self.utility_meters)}")
+        self._attr_unique_id = slugify(f"{self.operator} {self.utility_meter}")
 
     async def async_added_to_hass(self):
         """Setups all required entities and automations."""
@@ -225,13 +225,12 @@ class EletricityEntity(Entity):
 
             await self.async_update_ha_state()
 
-            for utility_meter in self.utility_meters:
-                _LOGGER.debug("Change %s to %s", utility_meter, self._state)
-                await self.hass.services.async_call(
-                    UTILITY_METER_DOMAIN,
-                    SERVICE_SELECT_TARIFF,
-                    {ATTR_ENTITY_ID: utility_meter, ATTR_TARIFF: self._state},
-                )
+            _LOGGER.debug("Change %s to %s", self.utility_meter, self._state)
+            await self.hass.services.async_call(
+                UTILITY_METER_DOMAIN,
+                SERVICE_SELECT_TARIFF,
+                {ATTR_ENTITY_ID: self.utility_meter, ATTR_TARIFF: self._state},
+            )
 
     @property
     def should_poll(self):
@@ -248,6 +247,6 @@ class EletricityEntity(Entity):
         """Return the state attributes."""
         attr = {
             ATTR_TARIFFS: self.operator.plano.tarifas,
-            ATTR_UTILITY_METERS: self.utility_meters,
+            ATTR_UTILITY_METER: self.utility_meter,
         }
         return attr
