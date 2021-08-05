@@ -4,6 +4,10 @@ import logging
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 from pyerse.comercializador import Comercializador
+from pyerse.ciclos import Ciclo_Diario
+
+from homeassistant.components.utility_meter.const import DOMAIN as UTILITY_METER_DOMAIN
+from homeassistant.components.sensor import DOMAIN as SENSOR_DOMAIN
 
 from homeassistant import config_entries
 from homeassistant.core import callback
@@ -53,7 +57,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                         vol.Required(CONF_PLAN): vol.In(
                             Comercializador.opcao_horaria()
                         ),
-                        vol.Required(CONF_CYCLE, default="Ciclo Diário"): vol.In(
+                        vol.Required(CONF_CYCLE, default=str(Ciclo_Diario())): vol.In(
                             Comercializador.opcao_ciclo()
                         ),
                     }
@@ -87,7 +91,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                             [
                                 s.entity_id
                                 for s in self.hass.states.async_all()
-                                if s.domain == "utility_meter"
+                                if s.domain == UTILITY_METER_DOMAIN
                             ]
                         ),
                     }
@@ -115,7 +119,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                             [
                                 s.entity_id
                                 for s in self.hass.states.async_all()
-                                if s.domain == "sensor"
+                                if s.domain == SENSOR_DOMAIN
                                 and s.attributes.get(ATTR_UNIT_OF_MEASUREMENT)
                                 in [
                                     ENERGY_WATT_HOUR,

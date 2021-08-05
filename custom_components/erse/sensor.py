@@ -49,9 +49,8 @@ ICON = "mdi:transmission-tower"
 async def async_setup_entry(hass, config_entry, async_add_entities):
     """Set up an electricity monitor from a Config Entry."""
 
-    import pprint
-
-    pprint.pprint(config_entry.data)
+    #import pprint
+    #pprint.pprint(config_entry.data)
 
     entities = list()
 
