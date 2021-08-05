@@ -21,8 +21,6 @@ Your `utility_meter` must have the proper tarifs:
 
 That is it!
 
-## Supported Plans
+# Help
 
-Go to https://github.com/dgomes/python-electricity/blob/master/README.md
-
-Your operator is not there? Open a PR or an Issue in the previous repository.
+Join me at [CPHA Discord](https://discord.gg/Mh9mTEA)

@@ -6,29 +6,48 @@
         "step": {
             "costs": {
                 "data": {
-                    "power_cost": "Cost of Power €/Day",
-                    "Vazio": "Cost in €/kWh for Vazio",
-                    "Fora de Vazio": "Cost in €/kWh for Fora de Vazio",
-                    "Cheias": "Cost in €/kWh for Cheias",
-                    "Ponta": "Cost in €/kWh for Ponta",
-                    "Normal": "Cost in €/kWh"
+                    "power_cost": "Cost of Power (day)",
+                    "VAZIO": "Cost of kWh in Vazio",
+                    "FORA_DE_VAZIO": "Cost of kWh in Fora de Vazio",
+                    "NORMAL": "Cost of kWh in Normal",
+                    "VAZIO meter": "Sensor tracking Vazio",
+                    "FORA_DE_VAZIO meter": "Sensor tracking Fora de Vazio",
+                    "NORMAL meter": "Sensor tracking Normal",
+                    "CHEIAS meter": "Sensor tracking Cheias",
+                    "PONTA meter": "Sensor tracking Ponta"
                 },
-                "title": "Costs"
+                "title": "Personalize Costs and Sensors"
             },
-            "plan": {
+            "utility_meter": {
+                "title": "Utility meters you want to control",
                 "data": {
-                    "plan": "Plan",
-                    "utility_meter": "Utility Meter"
-                },
-                "title": "Choose your plan and Utility Meter"
+                  "utility_meter": "Utility Meter"
+                }
             },
             "user": {
                 "data": {
-                    "operator": "Operator"
+                    "operator": "Operator",
+                    "installed_power": "Installed Power",
+                    "plan": "Plan",
+                    "cycle": "Cycle"
                 },
                 "title": "Which is your Operator"
             }
         },
         "title": "Entidade Reguladora dos Servi\u00e7os Energ\u00e9ticos"
-    }
+    },
+    "options": {
+        "title": "Define new costs",
+        "step": {
+            "init": {
+                "data": {
+                  "power_cost": "Cost of Power (day)",
+                  "VAZIO": "Cost of kWh in Vazio",
+                  "FORA_DE_VAZIO": "Cost of kWh in Fora de Vazio",
+                  "NORMAL": "Cost of kWh in Normal",
+                  "CHEIAS": "Cost of kWh in Cheias",
+                  "PONTA": "Cost of kWh in Ponta"            }
+            }
+        }
+      }
 }

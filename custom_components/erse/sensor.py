@@ -6,7 +6,6 @@ at http://github.com/dgomes/home-assistant-custom-components/electricity/
 """
 import logging
 
-from electricity.tariffs import Operators
 from homeassistant.components.sensor import (
     ATTR_LAST_RESET,
     DEVICE_CLASS_MONETARY,
@@ -16,7 +15,14 @@ from homeassistant.components.sensor import (
 from homeassistant.components.utility_meter.const import ATTR_TARIFF
 from homeassistant.components.utility_meter.const import DOMAIN as UTILITY_METER_DOMAIN
 from homeassistant.components.utility_meter.const import SERVICE_SELECT_TARIFF
-from homeassistant.const import ATTR_ENTITY_ID, CURRENCY_EURO, EVENT_HOMEASSISTANT_START
+from homeassistant.const import (
+    ATTR_ENTITY_ID,
+    CURRENCY_EURO,
+    EVENT_HOMEASSISTANT_START,
+    ATTR_UNIT_OF_MEASUREMENT,
+    ENERGY_WATT_HOUR,
+    ENERGY_KILO_WATT_HOUR,
+)
 from homeassistant.core import callback
 from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.event import (
@@ -27,25 +33,15 @@ from homeassistant.util import dt as dt_util
 from homeassistant.util import slugify
 
 from .const import (
-    CONF_COST,
-    CONF_OPERATOR,
-    CONF_PLAN,
-    CONF_POWER_COST,
+    CONF_METER_SUFFIX,
     CONF_UTILITY_METER,
-    CONTRIB_AUDIOVISUAL,
-    COUNTRY,
-    DISCOUNT,
-    IMPOSTO_ESPECIAL_DE_CONSUMO,
-    IVA,
-    IVA_REDUZIDA,
-    TAXA_DGEG,
-    TERMO_FIXO_ACESSO_REDES,
+    DOMAIN,
 )
 
 _LOGGER = logging.getLogger(__name__)
 
 ATTR_TARIFFS = "tariffs"
-ATTR_UTILITY_METERS = "utility meters"
+ATTR_UTILITY_METER = "utility meter"
 
 ICON = "mdi:transmission-tower"
 
@@ -53,24 +49,24 @@ ICON = "mdi:transmission-tower"
 async def async_setup_entry(hass, config_entry, async_add_entities):
     """Set up an electricity monitor from a Config Entry."""
 
-    entities = [EletricityEntity(config_entry.title, config_entry.data)]
+    #import pprint
+    #pprint.pprint(config_entry.data)
 
-    for utility_meter in config_entry.data[CONF_UTILITY_METER]:
-        meter_entity_template = f"{utility_meter[14:]}"
+    entities = list()
 
-        for tariff, cost in config_entry.data[CONF_COST].items():
-            meter_entity = "sensor." + slugify(f"{meter_entity_template} {tariff}")
-
-            entities.append(TariffCost(*DISCOUNT[tariff], meter_entity, cost))
-
+    if CONF_UTILITY_METER in config_entry.data:
         entities.append(
-            FixedCost(
-                config_entry.data[CONF_OPERATOR],
-                config_entry.data[CONF_PLAN],
-                meter_entity,
-                config_entry.data[CONF_POWER_COST],
+            EletricityEntity(
+                hass, config_entry.entry_id, config_entry.data[CONF_UTILITY_METER]
             )
         )
+
+    for tariff in hass.data[DOMAIN][config_entry.entry_id].plano.tarifas:
+        meter_entity = config_entry.data[f"{tariff.name}{CONF_METER_SUFFIX}"]
+
+        entities.append(TariffCost(hass, config_entry.entry_id, tariff, meter_entity))
+
+    entities.append(FixedCost(hass, config_entry.entry_id, meter_entity))
 
     async_add_entities(entities)
 
@@ -78,49 +74,55 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 class TariffCost(SensorEntity):
     """Track cost of kWh for a given tariff"""
 
-    def __init__(self, discount_kwh, discount_iva, meter_entity, kwh_cost):
+    def __init__(self, hass, entry_id, tariff, meter_entity):
         """Initialize cost tracker"""
+        self.operator = hass.data[DOMAIN][entry_id]
+
         self._attr_device_class = DEVICE_CLASS_MONETARY
         self._attr_state_class = STATE_CLASS_MEASUREMENT
         self._attr_unit_of_measurement = CURRENCY_EURO
         self._attr_last_reset = dt_util.utc_from_timestamp(0)
 
-        self._attr_name = f"{meter_entity} cost"
-        self._attr_unique_id = slugify(meter_entity + "cost")
+        self._attr_name = f"{self.operator} {tariff} cost"
+        self._attr_unique_id = slugify(f"{self.operator} {meter_entity} {tariff} cost")
 
-        self._discount_kwh = discount_kwh
-        self._discount_iva = discount_iva
+        self._tariff = tariff
         self._meter_entity = meter_entity
-        self._kwh_cost = kwh_cost
 
     async def async_added_to_hass(self):
-        """Handle entity which will be added."""
+        """Handle entity which will be tracked."""
         await super().async_added_to_hass()
 
-        def calc_costs(kwh):
-            kwh = float(kwh)
+        def calc_costs(meter_state):
 
-            _LOGGER.debug("{%s} calc_costs(%s)", self._attr_name, kwh)
-
-            if kwh == 0:
-                self._attr_last_reset = dt_util.now()
-
-            total = kwh * IMPOSTO_ESPECIAL_DE_CONSUMO * (1 + IVA)
-            if kwh > self._discount_kwh:
-                total += (
-                    float(self._kwh_cost)
-                    * (float(kwh) - self._discount_kwh)
-                    * (1 + IVA)
+            if meter_state and meter_state.attributes[ATTR_UNIT_OF_MEASUREMENT] in [
+                ENERGY_WATT_HOUR,
+                ENERGY_KILO_WATT_HOUR,
+            ]:
+                if meter_state.attributes[ATTR_UNIT_OF_MEASUREMENT] == ENERGY_WATT_HOUR:
+                    kwh = float(meter_state.state) / 1000
+                else:
+                    kwh = float(meter_state.state)
+            else:
+                _LOGGER.error(
+                    "Could not retrieve tariff sensor state or the sensor is not an energy sensor (wrong unit)"
                 )
-                kwh = self._discount_kwh
-            total += float(self._kwh_cost) * float(kwh) * (1 + self._discount_iva)
+                kwh = 0
 
-            self._attr_state = total
+            self._attr_state = self.operator.plano.custo_kWh_final(self._tariff, kwh)
+
+            _LOGGER.debug(
+                "{%s} calc_costs(%s) = %s using %s",
+                self._attr_name,
+                kwh,
+                self._attr_state,
+                self.operator.plano._custo,
+            )
 
         @callback
         async def async_increment_cost(event):
             new_state = event.data.get("new_state")
-            calc_costs(new_state.state)
+            calc_costs(new_state)
 
         self.async_on_remove(
             async_track_state_change_event(
@@ -131,8 +133,7 @@ class TariffCost(SensorEntity):
         @callback
         async def initial_sync(event):
             meter_state = self.hass.states.get(self._meter_entity)
-            if meter_state:
-                calc_costs(meter_state.state)
+            calc_costs(meter_state)
 
         self.hass.bus.async_listen_once(EVENT_HOMEASSISTANT_START, initial_sync)
 
@@ -140,21 +141,23 @@ class TariffCost(SensorEntity):
 class FixedCost(SensorEntity):
     """Track fixed costs."""
 
-    def __init__(self, operator, plan, meter, power_cost) -> None:
+    def __init__(self, hass, entry_id, any_meter) -> None:
         """Initialize fixed costs"""
+        self.operator = hass.data[DOMAIN][entry_id]
+
         self._attr_device_class = DEVICE_CLASS_MONETARY
         self._attr_state_class = STATE_CLASS_MEASUREMENT
+        self._attr_unit_of_measurement = CURRENCY_EURO
         self._attr_last_reset = dt_util.utc_from_timestamp(0)
 
-        self._attr_name = f"{operator} {plan} cost"
-        self._attr_unique_id = slugify(f"{operator} {plan} cost")
-        self._attr_unit_of_measurement = CURRENCY_EURO
+        self._attr_name = f"{self.operator} cost"
+        self._attr_unique_id = slugify(f"{self.operator} fixed cost")
 
-        self._meter = meter
-        self._power_cost = power_cost
+        self._meter = any_meter
 
     async def async_added_to_hass(self):
-        """Setups all required entities and automations."""
+        """Setups automations."""
+        await super().async_added_to_hass()
 
         self.async_on_remove(
             async_track_time_change(
@@ -170,7 +173,7 @@ class FixedCost(SensorEntity):
 
     @callback
     async def timer_update(self, now):
-        """Change tariff based on timer."""
+        """Update fixed costs as days go by."""
 
         last_reset = self.hass.states.get(self._meter).attributes[ATTR_LAST_RESET]
         last_reset = dt_util.parse_datetime(last_reset)
@@ -179,34 +182,28 @@ class FixedCost(SensorEntity):
         if elapsed.days == 0:
             self._attr_last_reset = now
 
-        self._attr_state = (
-            (elapsed.days + 1) * (TERMO_FIXO_ACESSO_REDES + self._power_cost)
-            + TAXA_DGEG
-        ) * (1 + IVA) + CONTRIB_AUDIOVISUAL * (1 + IVA_REDUZIDA)
+        self._attr_state = self.operator.plano.custos_fixos(elapsed.days)
 
 
 class EletricityEntity(Entity):
-    """Representation of an Electricity Contract."""
+    """Representation of an Electricity Tariff tracker."""
 
-    def __init__(self, name, config):
-        """Initialize an Electricity Contract."""
-        self._attr_name = name
-        self.operator = config[CONF_OPERATOR]
-        self.plan = config[CONF_PLAN]
-        self.utility_meters = config[CONF_UTILITY_METER]
-        self.my_plan = Operators[COUNTRY][self.operator](plan=self.plan)
-        self._tariffs = self.my_plan.tariffs()
+    def __init__(self, hass, entry_id, utility_meter):
+        """Initialize an Electricity Tariff Tracker."""
+        self.operator = hass.data[DOMAIN][entry_id]
+        self._attr_name = str(self.operator)
+        self.utility_meter = utility_meter
         self._state = None
         self._attr_icon = ICON
-        self._attr_unique_id = slugify(
-            f"{self.operator} {self.plan} {len(self.utility_meters)}"
-        )
+        self._attr_unique_id = slugify(f"{self.operator} {self.utility_meter}")
 
     async def async_added_to_hass(self):
         """Setups all required entities and automations."""
 
         self.async_on_remove(
-            async_track_time_change(self.hass, self.timer_update, minute=range(0, 60, 15))
+            async_track_time_change(
+                self.hass, self.timer_update, minute=range(0, 60, 15)
+            )
         )
 
         @callback
@@ -219,7 +216,7 @@ class EletricityEntity(Entity):
     async def timer_update(self, now):
         """Change tariff based on timer."""
 
-        new_state = self.my_plan.current_tariff(now)
+        new_state = self.operator.plano.tarifa_actual().value
 
         if new_state != self._state:
             _LOGGER.debug("Changing from %s to %s", self._state, new_state)
@@ -227,13 +224,12 @@ class EletricityEntity(Entity):
 
             await self.async_update_ha_state()
 
-            for utility_meter in self.utility_meters:
-                _LOGGER.debug("Change %s to %s", utility_meter, self._state)
-                await self.hass.services.async_call(
-                    UTILITY_METER_DOMAIN,
-                    SERVICE_SELECT_TARIFF,
-                    {ATTR_ENTITY_ID: utility_meter, ATTR_TARIFF: self._state},
-                )
+            _LOGGER.debug("Change %s to %s", self.utility_meter, self._state)
+            await self.hass.services.async_call(
+                UTILITY_METER_DOMAIN,
+                SERVICE_SELECT_TARIFF,
+                {ATTR_ENTITY_ID: self.utility_meter, ATTR_TARIFF: self._state},
+            )
 
     @property
     def should_poll(self):
@@ -248,8 +244,8 @@ class EletricityEntity(Entity):
     @property
     def device_state_attributes(self):
         """Return the state attributes."""
-        attr = dict()
-        if self._tariffs:
-            attr[ATTR_TARIFFS] = self._tariffs
-        attr[ATTR_UTILITY_METERS] = self.utility_meters
+        attr = {
+            ATTR_TARIFFS: self.operator.plano.tarifas,
+            ATTR_UTILITY_METER: self.utility_meter,
+        }
         return attr

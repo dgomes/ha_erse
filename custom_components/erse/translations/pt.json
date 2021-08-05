@@ -1,35 +1,56 @@
 {
     "config": {
         "error": {
-            "invalid_plan": "O Plano seleccionado não existe",
             "unknown": "Unexpected error"
         },
         "step": {
-            "plan": {
+            "utility_meter": {
                 "data": {
-                    "plan": "Plano",
                     "utility_meter": "Utility Meter"
                 },
                 "title": "Escolha o seu plano e Utility Meter"
             },
             "user": {
                 "data": {
-                    "operator": "Operador"
+                    "operator": "Operador",
+                    "installed_power": "Installed Power",
+                    "plan": "Plan",
+                    "cycle": "Cycle"
                 },
                 "title": "Qual é o seu Operador"
             },
             "costs": {
                 "data": {
-                    "power_cost": "Custo Potência €/Dia",
-                    "Vazio": "Custo em €/kWh para Vazio",
-                    "Fora de Vazio": "Custo em €/kWh para Fora de Vazio",
-                    "Cheias": "Custo em €/kWh para Cheias",
-                    "Ponta": "Custo em €/kWh para Ponta",
-                    "Normal": "Custo em €/kWh"
+                    "power_cost": "Custo Potência (diário)",
+                    "VAZIO": "Custo do kWh em Vazio",
+                    "FORA_DE_VAZIO": "Custo do kWh em Fora de Vazio",
+                    "NORMAL": "Custo do kWh em Normal",
+                    "CHEIAS": "Custo do kWh em Cheias",
+                    "PONTA": "Custo do kWh em Ponta",
+                    "VAZIO meter": "Sensor a medir Vazio",
+                    "FORA_DE_VAZIO meter": "Sensor a medir Fora de Vazio",
+                    "NORMAL meter": "Sensor a medir Normal",
+                    "CHEIAS meter": "Sensor a medir Cheias",
+                    "PONTA meter": "Sensor a medir Ponta"
                 },
-                "title": "Costs"
+                "title": "Custos e Sensores"
             }
         },
         "title": "Entidade Reguladora dos Servi\u00e7os Energ\u00e9ticos"
-    }
+    },
+    "options": {
+        "title": "Definir novos custos",
+        "step": {
+            "init": {
+                "data": {
+                    "power_cost": "Custo Potência (diário)",
+                    "VAZIO": "Custo do kWh em Vazio",
+                    "FORA_DE_VAZIO": "Custo do kWh em Fora de Vazio",
+                    "NORMAL": "Custo do kWh em Normal",
+                    "CHEIAS": "Custo do kWh em Cheias",
+                    "PONTA": "Custo do kWh em Ponta"         
+                }
+            }
+        }
+      }
 }

@@ -3,139 +3,194 @@ import logging
 
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
-from electricity.tariffs import Operators
-from homeassistant import config_entries, core, exceptions
-from homeassistant.util import slugify
+from pyerse.comercializador import Comercializador
+from pyerse.ciclos import Ciclo_Diario
 
-from .const import CONF_METER  # pylint:disable=unused-import
+from homeassistant.components.utility_meter.const import DOMAIN as UTILITY_METER_DOMAIN
+from homeassistant.components.sensor import DOMAIN as SENSOR_DOMAIN
+
+from homeassistant import config_entries
+from homeassistant.core import callback
+from homeassistant.const import (
+    ATTR_UNIT_OF_MEASUREMENT,
+    ENERGY_WATT_HOUR,
+    ENERGY_KILO_WATT_HOUR,
+)
+
 from .const import (
-    CONF_COST,
     CONF_OPERATOR,
+    CONF_INSTALLED_POWER,
     CONF_PLAN,
+    CONF_CYCLE,
     CONF_POWER_COST,
     CONF_UTILITY_METER,
-    CONF_UTILITY_METERS,
-    COUNTRY,
+    CONF_METER_SUFFIX,
     DOMAIN,
 )
 
 _LOGGER = logging.getLogger(__name__)
 
 
-async def validate_input(hass: core.HomeAssistant, data):
-    """Test if operator and plan are valid."""
-
-    if data[CONF_PLAN] not in Operators[COUNTRY][data[CONF_OPERATOR]].tariff_periods():
-        raise InvalidPlan
-
-    return {
-        CONF_OPERATOR: data[CONF_OPERATOR],
-        CONF_PLAN: data[CONF_PLAN],
-        CONF_UTILITY_METERS: [data[CONF_UTILITY_METER]],
-    }
-
-
 class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for Entidade Reguladora dos Serviços Energéticos."""
 
     VERSION = 1
-    # TODO pick one of the available connection classes in homeassistant/config_entries.py
-    CONNECTION_CLASS = config_entries.CONN_CLASS_UNKNOWN
+    CONNECTION_CLASS = config_entries.CONN_CLASS_ASSUMED
+
+    @staticmethod
+    @callback
+    def async_get_options_flow(config_entry):
+        """Get the options flow for this handler."""
+        return ERSEOptionsFlow(config_entry)
 
     async def async_step_user(self, user_input=None):
-        """Handle choice of tarifario."""
+        """Handle electrical energy plan configuration."""
         if user_input is None:
             return self.async_show_form(
                 step_id="user",
                 data_schema=vol.Schema(
                     {
-                        vol.Required(CONF_OPERATOR): vol.In(Operators[COUNTRY].keys()),
+                        vol.Required(CONF_OPERATOR): str,
+                        vol.Required(CONF_INSTALLED_POWER): vol.In(
+                            Comercializador.potencias()
+                        ),
+                        vol.Required(CONF_PLAN): vol.In(
+                            Comercializador.opcao_horaria()
+                        ),
+                        vol.Required(CONF_CYCLE, default=str(Ciclo_Diario())): vol.In(
+                            Comercializador.opcao_ciclo()
+                        ),
                     }
                 ),
             )
 
-        self.operator = user_input[CONF_OPERATOR]
-        return await self.async_step_plan()
+        try:
+            self.operator = Comercializador(
+                user_input[CONF_OPERATOR],
+                user_input[CONF_INSTALLED_POWER],
+                user_input[CONF_PLAN],
+                user_input[CONF_CYCLE],
+            )
+        except Exception:
+            # TODO do something about it
+            pass
 
-    async def async_step_plan(self, user_input=None):
-        """Handle the plan step."""
+        self.info = user_input
+        return await self.async_step_utility_meter()
+
+    async def async_step_utility_meter(self, user_input=None):
+        """Handle the choice of the utility meter."""
         errors = {}
 
-        if user_input is not None:
-            try:
-                self.plan = user_input[CONF_PLAN]
-                self.my_plan = Operators[COUNTRY][self.operator](plan=self.plan)
-                self._tariffs = (
-                    self.my_plan.tariffs()
-                    if isinstance(self.my_plan.tariffs(), list)
-                    else [self.my_plan.tariffs()]
-                )  # TODO python-electricity should always return lists
-                self.utility_meters = user_input[CONF_UTILITY_METERS]
-
-                return await self.async_step_costs()
-
-            except InvalidPlan:
-                errors["plan"] = "invalid_plan"
-            except Exception:  # pylint: disable=broad-except
-                _LOGGER.exception("Unexpected exception")
-                errors["base"] = "unknown"
-
-        DATA_SCHEMA = vol.Schema(
-            {
-                vol.Required(CONF_PLAN): vol.In(
-                    list(
-                        set(
+        if user_input is None:
+            return self.async_show_form(
+                step_id="utility_meter",
+                data_schema=vol.Schema(
+                    {
+                        vol.Optional(CONF_UTILITY_METER): vol.In(
                             [
-                                str(p)
-                                for p in Operators[COUNTRY][
-                                    self.operator
-                                ].tariff_periods()
+                                s.entity_id
+                                for s in self.hass.states.async_all()
+                                if s.domain == UTILITY_METER_DOMAIN
                             ]
-                        )
-                    )
+                        ),
+                    }
                 ),
-                vol.Required(CONF_UTILITY_METER): cv.multi_select(
-                    [
-                        s.entity_id
-                        for s in self.hass.states.async_all()
-                        if s.domain == "utility_meter"
-                    ]
-                ),
-            }
-        )
-
-        return self.async_show_form(
-            step_id="plan", data_schema=DATA_SCHEMA, errors=errors
-        )
-
-    async def async_step_costs(self, user_input=None):
-        """Handle the costs of each tariff"""
-        errors = {}
-
-        if user_input is not None:
-            info = {
-                CONF_OPERATOR: self.operator,
-                CONF_PLAN: self.plan,
-                CONF_UTILITY_METERS: self.utility_meters,
-                CONF_COST: {tariff: user_input[tariff] for tariff in self._tariffs},
-                CONF_POWER_COST: user_input[CONF_POWER_COST],
-            }
-
-            return self.async_create_entry(
-                title=slugify(f"{self.operator} - {self.plan}"),
-                data=info,
             )
 
-        DATA_SCHEMA = vol.Schema(
-            {
-                **{vol.Required(CONF_POWER_COST): float},
-                **{vol.Required(tariff): float for tariff in self._tariffs},
-            }
+        if CONF_UTILITY_METER in user_input:
+            self.info[CONF_UTILITY_METER] = user_input[CONF_UTILITY_METER]
+        return await self.async_step_costs()
+
+    async def async_step_costs(self, user_input=None):
+        """Handle the costs of each tariff."""
+        errors = {}
+
+        if user_input is None:
+            DATA_SCHEMA = vol.Schema(
+                {
+                    vol.Required(CONF_POWER_COST): float,
+                    **{
+                        vol.Required(tariff.name): float
+                        for tariff in self.operator.plano.tarifas
+                    },
+                    **{
+                        vol.Required(tariff.name + CONF_METER_SUFFIX): vol.In(
+                            [
+                                s.entity_id
+                                for s in self.hass.states.async_all()
+                                if s.domain == SENSOR_DOMAIN
+                                and s.attributes.get(ATTR_UNIT_OF_MEASUREMENT)
+                                in [
+                                    ENERGY_WATT_HOUR,
+                                    ENERGY_KILO_WATT_HOUR,
+                                ]
+                            ]
+                        )
+                        for tariff in self.operator.plano.tarifas
+                    },
+                }
+            )
+            return self.async_show_form(
+                step_id="costs", data_schema=DATA_SCHEMA, errors=errors
+            )
+
+        try:
+            for key in user_input:
+                if key == CONF_POWER_COST:
+                    self.operator.plano.definir_custo_potencia(user_input[key])
+                else:
+                    self.operator.plano.definir_custo_kWh(key, user_input[key])
+        except Exception:
+            # TODO do something about it
+            pass
+
+        return self.async_create_entry(
+            title=str(self.operator), data={**self.info, **user_input}
         )
+
+
+class ERSEOptionsFlow(config_entries.OptionsFlow):
+    """Handle options."""
+
+    def __init__(self, config_entry):
+        """Initialize options flow."""
+        self.operator = Comercializador(
+            config_entry.data[CONF_OPERATOR],
+            config_entry.data[CONF_INSTALLED_POWER],
+            config_entry.data[CONF_PLAN],
+            config_entry.data[CONF_CYCLE],
+        )
+        self.costs = {
+            CONF_POWER_COST: config_entry.options.get(
+                CONF_POWER_COST, config_entry.data[CONF_POWER_COST]
+            ),
+            **{
+                tariff.name: config_entry.options.get(
+                    tariff.name, config_entry.data[tariff.name]
+                )
+                for tariff in self.operator.plano.tarifas
+            },
+        }
+
+    async def async_step_init(self, user_input=None):
+        """Manage the options."""
+        if user_input is not None:
+            return self.async_create_entry(title="", data=user_input)
+
         return self.async_show_form(
-            step_id="costs", data_schema=DATA_SCHEMA, errors=errors
+            step_id="init",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(
+                        CONF_POWER_COST, default=self.costs[CONF_POWER_COST]
+                    ): float,
+                    **{
+                        vol.Required(
+                            tariff.name, default=self.costs[tariff.name]
+                        ): float
+                        for tariff in self.operator.plano.tarifas
+                    },
+                }
+            ),
         )
-
-
-class InvalidPlan(exceptions.HomeAssistantError):
-    """Error to indicate there is invalid plan."""
