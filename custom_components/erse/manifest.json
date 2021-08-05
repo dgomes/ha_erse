@@ -6,7 +6,7 @@
   "documentation": "https://github.com/dgomes/ha_erse",
   "issue_tracker": "https://github.com/dgomes/ha_erse/issues",
   "requirements": [
-    "pyerse==0.0.1"
+    "pyerse==0.0.2"
   ],
   "after_dependencies": [],
   "ssdp": [],

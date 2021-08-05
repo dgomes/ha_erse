@@ -92,16 +92,15 @@ class TariffCost(SensorEntity):
         self._meter_entity = meter_entity
 
     async def async_added_to_hass(self):
-        """Handle entity which will be added."""
+        """Handle entity which will be tracked."""
         await super().async_added_to_hass()
 
         def calc_costs(kwh):
             kwh = float(kwh)
 
-            _LOGGER.debug("{%s} calc_costs(%s)", self._attr_name, kwh)
-            _LOGGER.error("%s", self.operator.plano._custo)
-
             self._attr_state = self.operator.plano.custo_kWh_final(self._tariff, kwh)
+
+            _LOGGER.debug("{%s} calc_costs(%s) = %s using %s", self._attr_name, kwh, self._attr_state, self.operator.plano._custo)
 
         @callback
         async def async_increment_cost(event):
@@ -132,16 +131,17 @@ class FixedCost(SensorEntity):
 
         self._attr_device_class = DEVICE_CLASS_MONETARY
         self._attr_state_class = STATE_CLASS_MEASUREMENT
+        self._attr_unit_of_measurement = CURRENCY_EURO
         self._attr_last_reset = dt_util.utc_from_timestamp(0)
 
         self._attr_name = f"{self.operator} cost"
         self._attr_unique_id = slugify(f"{self.operator} cost")
-        self._attr_unit_of_measurement = CURRENCY_EURO
 
         self._meter = any_meter
 
     async def async_added_to_hass(self):
-        """Setups all required entities and automations."""
+        """Setups automations."""
+        await super().async_added_to_hass()
 
         self.async_on_remove(
             async_track_time_change(
