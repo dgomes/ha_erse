@@ -21,14 +21,31 @@
         "title": "Costs",
         "data": {
           "power_cost": "Cost of Power (day)",
-          "Tarifa.VAZIO": "Cost of kWh in Vazio",
-          "Tarifa.FORA_DE_VAZIO": "Cost of kWh in Fora de Vazio",
-          "Tarifa.NORMAL": "Cost of kWh in Normal"
+          "VAZIO": "Cost of kWh in Vazio",
+          "FORA_DE_VAZIO": "Cost of kWh in Fora de Vazio",
+          "NORMAL": "Cost of kWh in Normal",
+          "CHEIAS": "Cost of kWh in Cheias",
+          "PONTA": "Cost of kWh in Ponta"
         }
       }
     },
     "error": {
       "unknown": "Unexpected error"
+    }
+  },
+  "options": {
+    "title": "Define new costs",
+    "step": {
+        "init": {
+            "data": {
+              "power_cost": "Cost of Power (day)",
+              "VAZIO": "Cost of kWh in Vazio",
+              "FORA_DE_VAZIO": "Cost of kWh in Fora de Vazio",
+              "NORMAL": "Cost of kWh in Normal",
+              "CHEIAS": "Cost of kWh in Cheias",
+              "PONTA": "Cost of kWh in Ponta"            
+            }
+        }
     }
   }
 }

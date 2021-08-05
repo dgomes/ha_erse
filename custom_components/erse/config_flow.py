@@ -3,14 +3,13 @@ import logging
 
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
-from pyerse.ciclos import Ciclo, Ciclo_Semanal, Ciclo_Diario
-from pyerse.comercializador import Plano, Opcao_Horaria, PlanoException, Tarifa, Comercializador 
+from pyerse.comercializador import Comercializador
 
 from homeassistant import config_entries, core, exceptions
-from homeassistant.util import slugify
+from homeassistant.core import callback
+
 
 from .const import (
-    CONF_COST,
     CONF_OPERATOR,
     CONF_INSTALLED_POWER,
     CONF_PLAN,
@@ -18,24 +17,10 @@ from .const import (
     CONF_POWER_COST,
     CONF_UTILITY_METER,
     CONF_UTILITY_METERS,
-    COUNTRY,
     DOMAIN,
 )
 
 _LOGGER = logging.getLogger(__name__)
-
-
-async def validate_input(hass: core.HomeAssistant, data):
-    """Test if operator and plan are valid."""
-
-    if data[CONF_PLAN] not in Operators[COUNTRY][data[CONF_OPERATOR]].tariff_periods():
-        raise InvalidPlan
-
-    return {
-        CONF_OPERATOR: data[CONF_OPERATOR],
-        CONF_PLAN: data[CONF_PLAN],
-        CONF_UTILITY_METERS: [data[CONF_UTILITY_METER]],
-    }
 
 
 class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
@@ -43,6 +28,12 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     VERSION = 1
     CONNECTION_CLASS = config_entries.CONN_CLASS_ASSUMED
+
+    @staticmethod
+    @callback
+    def async_get_options_flow(config_entry):
+        """Get the options flow for this handler."""
+        return ERSEOptionsFlow(config_entry)
 
     async def async_step_user(self, user_input=None):
         """Handle electrical energy plan configuration."""
@@ -52,17 +43,28 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 data_schema=vol.Schema(
                     {
                         vol.Required(CONF_OPERATOR): str,
-                        vol.Required(CONF_INSTALLED_POWER): vol.In(Comercializador.potencias()),
-                        vol.Required(CONF_PLAN): vol.In(Comercializador.opcao_horaria()),
-                        vol.Required(CONF_CYCLE, default="Ciclo Diário"): vol.In(Comercializador.opcao_ciclo())
+                        vol.Required(CONF_INSTALLED_POWER): vol.In(
+                            Comercializador.potencias()
+                        ),
+                        vol.Required(CONF_PLAN): vol.In(
+                            Comercializador.opcao_horaria()
+                        ),
+                        vol.Required(CONF_CYCLE, default="Ciclo Diário"): vol.In(
+                            Comercializador.opcao_ciclo()
+                        ),
                     }
                 ),
             )
 
         try:
-            self.operator = Comercializador(user_input[CONF_OPERATOR], user_input[CONF_INSTALLED_POWER], user_input[CONF_PLAN], user_input[CONF_CYCLE])
+            self.operator = Comercializador(
+                user_input[CONF_OPERATOR],
+                user_input[CONF_INSTALLED_POWER],
+                user_input[CONF_PLAN],
+                user_input[CONF_CYCLE],
+            )
         except Exception:
-            #TODO do something about it
+            # TODO do something about it
             pass
 
         self.info = user_input
@@ -98,8 +100,11 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         if user_input is None:
             DATA_SCHEMA = vol.Schema(
                 {
-                    **{vol.Required(CONF_POWER_COST): float},
-                    **{vol.Required(str(tariff)): float for tariff in self.operator.plano.tarifas},
+                    vol.Required(CONF_POWER_COST): float,
+                    **{
+                        vol.Required(tariff.name): float
+                        for tariff in self.operator.plano.tarifas
+                    },
                 }
             )
             return self.async_show_form(
@@ -113,10 +118,55 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 else:
                     self.operator.plano.definir_custo_kWh(key, user_input[key])
         except Exception:
-            #TODO do something about it
+            # TODO do something about it
             pass
 
         return self.async_create_entry(
-            title=str(self.operator),
-            data={ **self.info, **user_input }
+            title=str(self.operator), data={**self.info, **user_input}
+        )
+
+
+class ERSEOptionsFlow(config_entries.OptionsFlow):
+    """Handle options."""
+
+    def __init__(self, config_entry):
+        """Initialize options flow."""
+        self.operator = Comercializador(
+            config_entry.data[CONF_OPERATOR],
+            config_entry.data[CONF_INSTALLED_POWER],
+            config_entry.data[CONF_PLAN],
+            config_entry.data[CONF_CYCLE],
+        )
+        self.costs = {
+            CONF_POWER_COST: config_entry.options.get(
+                CONF_POWER_COST, config_entry.data[CONF_POWER_COST]
+            ),
+            **{
+                tariff.name: config_entry.options.get(
+                    tariff.name, config_entry.data[tariff.name]
+                )
+                for tariff in self.operator.plano.tarifas
+            },
+        }
+
+    async def async_step_init(self, user_input=None):
+        """Manage the options."""
+        if user_input is not None:
+            return self.async_create_entry(title="", data=user_input)
+
+        return self.async_show_form(
+            step_id="init",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(
+                        CONF_POWER_COST, default=self.costs[CONF_POWER_COST]
+                    ): float,
+                    **{
+                        vol.Required(
+                            tariff.name, default=self.costs[tariff.name]
+                        ): float
+                        for tariff in self.operator.plano.tarifas
+                    },
+                }
+            ),
         )

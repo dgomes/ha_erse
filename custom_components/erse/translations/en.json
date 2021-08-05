@@ -7,9 +7,9 @@
             "costs": {
                 "data": {
                     "power_cost": "Cost of Power (day)",
-                    "Tarifa.VAZIO": "Cost of kWh in Vazio",
-                    "Tarifa.FORA_DE_VAZIO": "Cost of kWh in Fora de Vazio",
-                    "Tarifa.NORMAL": "Cost of kWh in Normal"
+                    "VAZIO": "Cost of kWh in Vazio",
+                    "FORA_DE_VAZIO": "Cost of kWh in Fora de Vazio",
+                    "NORMAL": "Cost of kWh in Normal"
                 },
                 "title": "Personalize Costs"
             },
@@ -30,5 +30,19 @@
             }
         },
         "title": "Entidade Reguladora dos Servi\u00e7os Energ\u00e9ticos"
-    }
+    },
+    "options": {
+        "title": "Define new costs",
+        "step": {
+            "init": {
+                "data": {
+                  "power_cost": "Cost of Power (day)",
+                  "VAZIO": "Cost of kWh in Vazio",
+                  "FORA_DE_VAZIO": "Cost of kWh in Fora de Vazio",
+                  "NORMAL": "Cost of kWh in Normal",
+                  "CHEIAS": "Cost of kWh in Cheias",
+                  "PONTA": "Cost of kWh in Ponta"            }
+            }
+        }
+      }
 }
