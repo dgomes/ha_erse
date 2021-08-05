@@ -88,8 +88,16 @@ class TariffCost(SensorEntity):
         """Handle entity which will be tracked."""
         await super().async_added_to_hass()
 
-        def calc_costs(kwh):
-            kwh = float(kwh)
+        def calc_costs(meter_state):
+
+            if meter_state and meter_state.attributes[ATTR_UNIT_OF_MEASUREMENT] in [ENERGY_WATT_HOUR, ENERGY_KILO_WATT_HOUR]:
+                if meter_state.attributes[ATTR_UNIT_OF_MEASUREMENT] == ENERGY_WATT_HOUR:
+                    kwh = float(meter_state.state) / 1000
+                else:
+                    kwh = float(meter_state.state)
+            else:
+                _LOGGER.error("Could not retrieve tariff sensor state or the sensor is not an energy sensor (wrong unit)")
+                kwh = 0
 
             self._attr_state = self.operator.plano.custo_kWh_final(self._tariff, kwh)
 
@@ -98,7 +106,7 @@ class TariffCost(SensorEntity):
         @callback
         async def async_increment_cost(event):
             new_state = event.data.get("new_state")
-            calc_costs(new_state.state)
+            calc_costs(new_state)
 
         self.async_on_remove(
             async_track_state_change_event(
@@ -109,13 +117,7 @@ class TariffCost(SensorEntity):
         @callback
         async def initial_sync(event):
             meter_state = self.hass.states.get(self._meter_entity)
-            if meter_state and meter_state.attributes[ATTR_UNIT_OF_MEASUREMENT] in [ENERGY_WATT_HOUR, ENERGY_KILO_WATT_HOUR]:
-                if meter_state.attributes[ATTR_UNIT_OF_MEASUREMENT] == ENERGY_WATT_HOUR:
-                    calc_costs(float(meter_state.state) / 1000)
-                else:
-                    calc_costs(meter_state.state)
-            else:
-                _LOGGER.error("Could not retrieve tariff sensor state or the sensor is not an energy sensor (wrong unit)")
+            calc_costs(meter_state)
 
         self.hass.bus.async_listen_once(EVENT_HOMEASSISTANT_START, initial_sync)
 
@@ -155,7 +157,7 @@ class FixedCost(SensorEntity):
 
     @callback
     async def timer_update(self, now):
-        """Change tariff based on timer."""
+        """Update fixed costs as days go by."""
 
         last_reset = self.hass.states.get(self._meter).attributes[ATTR_LAST_RESET]
         last_reset = dt_util.parse_datetime(last_reset)
@@ -168,10 +170,10 @@ class FixedCost(SensorEntity):
 
 
 class EletricityEntity(Entity):
-    """Representation of an Electricity Contract."""
+    """Representation of an Electricity Tariff tracker."""
 
     def __init__(self, hass, entry_id, utility_meters):
-        """Initialize an Electricity Contract."""
+        """Initialize an Electricity Tariff Tracker."""
         self.operator = hass.data[DOMAIN][entry_id]
         self._attr_name = str(self.operator)
         self.utility_meters = utility_meters
