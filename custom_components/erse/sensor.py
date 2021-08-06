@@ -82,8 +82,8 @@ class TariffCost(SensorEntity):
         self._attr_unit_of_measurement = CURRENCY_EURO
         self._attr_last_reset = dt_util.utc_from_timestamp(0)
 
-        self._attr_name = f"{self.operator} {tariff} cost"
-        self._attr_unique_id = slugify(f"{entry_id} {meter_entity} {tariff} cost")
+        self._attr_name = f"{meter_entity} cost"
+        self._attr_unique_id = slugify(f"{entry_id} {meter_entity} cost")
 
         self._tariff = tariff
         self._meter_entity = meter_entity
