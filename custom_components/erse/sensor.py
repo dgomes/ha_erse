@@ -84,7 +84,7 @@ class TariffCost(SensorEntity):
         self._attr_last_reset = dt_util.utc_from_timestamp(0)
 
         self._attr_name = f"{self.operator} {tariff} cost"
-        self._attr_unique_id = slugify(f"{self.operator} {meter_entity} {tariff} cost")
+        self._attr_unique_id = slugify(f"{entry_id} {tariff} cost")
 
         self._tariff = tariff
         self._meter_entity = meter_entity
@@ -151,7 +151,7 @@ class FixedCost(SensorEntity):
         self._attr_last_reset = dt_util.utc_from_timestamp(0)
 
         self._attr_name = f"{self.operator} cost"
-        self._attr_unique_id = slugify(f"{self.operator} fixed cost")
+        self._attr_unique_id = slugify(f"{entry_id} fixed cost")
 
         self._meter = any_meter
 
@@ -195,7 +195,7 @@ class EletricityEntity(Entity):
         self.utility_meter = utility_meter
         self._state = None
         self._attr_icon = ICON
-        self._attr_unique_id = slugify(f"{self.operator} {self.utility_meter}")
+        self._attr_unique_id = slugify(f"{entry_id} {self.utility_meter}")
 
     async def async_added_to_hass(self):
         """Setups all required entities and automations."""
