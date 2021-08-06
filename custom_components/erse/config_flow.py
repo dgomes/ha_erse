@@ -23,7 +23,7 @@ from .const import (
     CONF_PLAN,
     CONF_CYCLE,
     CONF_POWER_COST,
-    CONF_UTILITY_METER,
+    CONF_UTILITY_METERS,
     CONF_METER_SUFFIX,
     DOMAIN,
 )
@@ -87,7 +87,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 step_id="utility_meter",
                 data_schema=vol.Schema(
                     {
-                        vol.Optional(CONF_UTILITY_METER): vol.In(
+                        vol.Optional(CONF_UTILITY_METERS): cv.multi_select(
                             [
                                 s.entity_id
                                 for s in self.hass.states.async_all()
@@ -98,8 +98,8 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 ),
             )
 
-        if CONF_UTILITY_METER in user_input:
-            self.info[CONF_UTILITY_METER] = user_input[CONF_UTILITY_METER]
+        if CONF_UTILITY_METERS in user_input:
+            self.info[CONF_UTILITY_METERS] = user_input[CONF_UTILITY_METERS]
         return await self.async_step_costs()
 
     async def async_step_costs(self, user_input=None):
@@ -115,7 +115,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                         for tariff in self.operator.plano.tarifas
                     },
                     **{
-                        vol.Required(tariff.name + CONF_METER_SUFFIX): vol.In(
+                        vol.Required(tariff.name + CONF_METER_SUFFIX): cv.multi_select(
                             [
                                 s.entity_id
                                 for s in self.hass.states.async_all()
