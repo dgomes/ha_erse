@@ -79,7 +79,7 @@ class TariffCost(SensorEntity):
 
         self._attr_device_class = DEVICE_CLASS_MONETARY
         self._attr_state_class = STATE_CLASS_MEASUREMENT
-        self._attr_unit_of_measurement = CURRENCY_EURO
+        self._attr_native_unit_of_measurement = CURRENCY_EURO
         self._attr_last_reset = dt_util.utc_from_timestamp(0)
 
         self._attr_name = f"{meter_entity} cost"
@@ -108,13 +108,13 @@ class TariffCost(SensorEntity):
                 )
                 kwh = 0
 
-            self._attr_state = self.operator.plano.custo_kWh_final(self._tariff, kwh)
+            self._attr_native_value = self.operator.plano.custo_kWh_final(self._tariff, kwh)
 
             _LOGGER.debug(
                 "{%s} calc_costs(%s) = %s using %s",
                 self._attr_name,
                 kwh,
-                self._attr_state,
+                self._attr_native_value,
                 self.operator.plano._custo,
             )
 
@@ -146,7 +146,7 @@ class FixedCost(SensorEntity):
 
         self._attr_device_class = DEVICE_CLASS_MONETARY
         self._attr_state_class = STATE_CLASS_MEASUREMENT
-        self._attr_unit_of_measurement = CURRENCY_EURO
+        self._attr_native_unit_of_measurement = CURRENCY_EURO
         self._attr_last_reset = dt_util.utc_from_timestamp(0)
 
         self._attr_name = f"{self.operator} cost"
@@ -181,7 +181,7 @@ class FixedCost(SensorEntity):
         if elapsed.days == 0:
             self._attr_last_reset = now
 
-        self._attr_state = self.operator.plano.custos_fixos(elapsed.days)
+        self._attr_native_value = self.operator.plano.custos_fixos(elapsed.days)
 
 
 class EletricityEntity(Entity):
