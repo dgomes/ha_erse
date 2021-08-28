@@ -1,6 +1,5 @@
 {
   "config": {
-    "title": "Entidade Reguladora dos Servi\u00e7os Energ\u00e9ticos",
     "step": {
       "user": {
         "title": "Which is your Operator",
@@ -39,10 +38,10 @@
     }
   },
   "options": {
-    "title": "Define new costs",
     "step": {
         "init": {
-            "data": {
+          "title": "Define new costs",
+          "data": {
               "power_cost": "Cost of Power (day)",
               "VAZIO": "Cost of kWh in Vazio",
               "FORA_DE_VAZIO": "Cost of kWh in Fora de Vazio",

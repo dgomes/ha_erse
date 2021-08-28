@@ -14,3 +14,5 @@ CONF_UTILITY_METER = "utility_meter"
 CONF_UTILITY_METERS = "utility_meter"
 
 UPDATE_LISTENER = "update_listener"
+
+ATTR_COST = "unitary_cost"

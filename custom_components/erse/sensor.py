@@ -36,6 +36,7 @@ from .const import (
     CONF_METER_SUFFIX,
     CONF_UTILITY_METERS,
     DOMAIN,
+    ATTR_COST,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -49,9 +50,6 @@ ICON = "mdi:transmission-tower"
 async def async_setup_entry(hass, config_entry, async_add_entities):
     """Set up an electricity monitor from a Config Entry."""
 
-    #import pprint
-    #pprint.pprint(config_entry.data)
-
     entities = list()
 
     if CONF_UTILITY_METERS in config_entry.data:
@@ -63,7 +61,9 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 
     for tariff in hass.data[DOMAIN][config_entry.entry_id].plano.tarifas:
         for meter_entity in config_entry.data[f"{tariff.name}{CONF_METER_SUFFIX}"]:
-            entities.append(TariffCost(hass, config_entry.entry_id, tariff, meter_entity))
+            entities.append(
+                TariffCost(hass, config_entry.entry_id, tariff, meter_entity)
+            )
 
     entities.append(FixedCost(hass, config_entry.entry_id, meter_entity))
 
@@ -87,6 +87,11 @@ class TariffCost(SensorEntity):
 
         self._tariff = tariff
         self._meter_entity = meter_entity
+
+    @property
+    def extra_state_attributes(self):
+        attrs = {ATTR_COST: self.operator.plano.custo_tarifa(self._tariff)}
+        return attrs
 
     async def async_added_to_hass(self):
         """Handle entity which will be tracked."""
@@ -194,7 +199,10 @@ class EletricityEntity(Entity):
         self._utility_meters = utility_meters
         self._state = None
         self._attr_icon = ICON
-        self._attr_unique_id = slugify(f"{entry_id} utility_meters {len(self._utility_meters)}")
+        self._attr_unique_id = slugify(
+            f"{entry_id} utility_meters {len(self._utility_meters)}"
+        )
+        self._attr_should_poll = False
 
     async def async_added_to_hass(self):
         """Setups all required entities and automations."""
@@ -232,18 +240,13 @@ class EletricityEntity(Entity):
                 )
 
     @property
-    def should_poll(self):
-        """If entity should be polled."""
-        return False
-
-    @property
     def state(self):
         """Return the state as the current tariff."""
         return self._state
 
     @property
-    def device_state_attributes(self):
-        """Return the state attributes."""
+    def capability_attributes(self):
+        """Return capability attributes."""
         attr = {
             ATTR_TARIFFS: self.operator.plano.tarifas,
             ATTR_UTILITY_METERS: self._utility_meters,

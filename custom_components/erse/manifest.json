@@ -1,18 +1,19 @@
 {
-  "version": "2.0.0",
+  "version": "2.0.3",
   "domain": "erse",
   "name": "Entidade Reguladora dos Servi\u00e7os Energ\u00e9ticos",
   "config_flow": true,
   "documentation": "https://github.com/dgomes/ha_erse",
   "issue_tracker": "https://github.com/dgomes/ha_erse/issues",
   "requirements": [
-    "pyerse==0.0.3"
+    "pyerse==0.0.4"
   ],
   "after_dependencies": [],
   "ssdp": [],
   "zeroconf": [],
   "homekit": {},
-  "dependencies": [],
+  "iot_class": "assumed_state",
+  "dependencies": ["utility_meter"],
   "codeowners": [
     "@dgomes"
   ]
