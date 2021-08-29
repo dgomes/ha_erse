@@ -32,11 +32,15 @@ from homeassistant.helpers.event import (
 from homeassistant.util import dt as dt_util
 from homeassistant.util import slugify
 
+from homeassistant.const import __version__ as HA_VERSION
+from awesomeversion import AwesomeVersion
+
 from .const import (
     CONF_METER_SUFFIX,
     CONF_UTILITY_METERS,
     DOMAIN,
     ATTR_COST,
+    ATTR_CURRENT_COST,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -59,6 +63,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
             )
         )
 
+    meter_entity = None
     for tariff in hass.data[DOMAIN][config_entry.entry_id].plano.tarifas:
         for meter_entity in config_entry.data[f"{tariff.name}{CONF_METER_SUFFIX}"]:
             entities.append(
@@ -79,14 +84,16 @@ class TariffCost(SensorEntity):
 
         self._attr_device_class = DEVICE_CLASS_MONETARY
         self._attr_state_class = STATE_CLASS_MEASUREMENT
-        self._attr_unit_of_measurement = CURRENCY_EURO
-        self._attr_last_reset = dt_util.utc_from_timestamp(0)
+        self._attr_unit_of_measurement = CURRENCY_EURO      #TODO _attr_native_unit_of_measurement
+        if AwesomeVersion(HA_VERSION) < "2021.9.0":
+            self._attr_last_reset = dt_util.utc_from_timestamp(0)
 
         self._attr_name = f"{meter_entity} cost"
         self._attr_unique_id = slugify(f"{entry_id} {meter_entity} cost")
 
         self._tariff = tariff
         self._meter_entity = meter_entity
+        self._attr_should_poll = False
 
     @property
     def extra_state_attributes(self):
@@ -97,7 +104,7 @@ class TariffCost(SensorEntity):
         """Handle entity which will be tracked."""
         await super().async_added_to_hass()
 
-        def calc_costs(meter_state):
+        async def calc_costs(meter_state):
 
             if meter_state and meter_state.attributes[ATTR_UNIT_OF_MEASUREMENT] in [
                 ENERGY_WATT_HOUR,
@@ -113,20 +120,28 @@ class TariffCost(SensorEntity):
                 )
                 kwh = 0
 
-            self._attr_state = self.operator.plano.custo_kWh_final(self._tariff, kwh)
-
-            _LOGGER.debug(
-                "{%s} calc_costs(%s) = %s using %s",
-                self._attr_name,
-                kwh,
-                self._attr_state,
-                self.operator.plano._custo,
-            )
+            if AwesomeVersion(HA_VERSION) >= "2021.9.0":
+                self._attr_native_value = round(self.operator.plano.custo_kWh_final(self._tariff, kwh), 2)
+                _LOGGER.debug(
+                    "{%s} calc_costs(%s) = %s",
+                    self._attr_name,
+                    kwh,
+                    self._attr_native_value,
+                )
+            else:
+                self._attr_state = round(self.operator.plano.custo_kWh_final(self._tariff, kwh), 2)
+                _LOGGER.debug(
+                    "{%s} calc_costs(%s) = %s",
+                    self._attr_name,
+                    kwh,
+                    self._attr_state,
+                )
+            self.async_write_ha_state()
 
         @callback
         async def async_increment_cost(event):
             new_state = event.data.get("new_state")
-            calc_costs(new_state)
+            await calc_costs(new_state)
 
         self.async_on_remove(
             async_track_state_change_event(
@@ -135,9 +150,9 @@ class TariffCost(SensorEntity):
         )
 
         @callback
-        async def initial_sync(event):
+        async def initial_sync(_):
             meter_state = self.hass.states.get(self._meter_entity)
-            calc_costs(meter_state)
+            await calc_costs(meter_state)
 
         self.hass.bus.async_listen_once(EVENT_HOMEASSISTANT_START, initial_sync)
 
@@ -147,17 +162,22 @@ class FixedCost(SensorEntity):
 
     def __init__(self, hass, entry_id, any_meter) -> None:
         """Initialize fixed costs"""
+        if any_meter is None:
+            _LOGGER.error("No meter sensor entities defined")
+            return
+
         self.operator = hass.data[DOMAIN][entry_id]
 
         self._attr_device_class = DEVICE_CLASS_MONETARY
         self._attr_state_class = STATE_CLASS_MEASUREMENT
-        self._attr_unit_of_measurement = CURRENCY_EURO
+        self._attr_unit_of_measurement = CURRENCY_EURO          #TODO _attr_native_unit_of_measurement
         self._attr_last_reset = dt_util.utc_from_timestamp(0)
 
         self._attr_name = f"{self.operator} cost"
         self._attr_unique_id = slugify(f"{entry_id} {any_meter} fixed cost")
 
         self._meter = any_meter
+        self._attr_should_poll = False
 
     async def async_added_to_hass(self):
         """Setups automations."""
@@ -170,7 +190,7 @@ class FixedCost(SensorEntity):
         )
 
         @callback
-        async def initial_sync(event):
+        async def initial_sync(_):
             await self.timer_update(dt_util.now())
 
         self.hass.bus.async_listen_once(EVENT_HOMEASSISTANT_START, initial_sync)
@@ -183,10 +203,18 @@ class FixedCost(SensorEntity):
         last_reset = dt_util.parse_datetime(last_reset)
 
         elapsed = now - last_reset
-        if elapsed.days == 0:
-            self._attr_last_reset = now
 
-        self._attr_state = self.operator.plano.custos_fixos(elapsed.days)
+        if AwesomeVersion(HA_VERSION) >= "2021.9.0":
+            self._attr_native_value = round(self.operator.plano.custos_fixos(elapsed.days), 2)
+            _LOGGER.debug("FixedCost = %s", self._attr_native_value)
+        else:
+            if elapsed.days == 0:
+                self._attr_last_reset = now
+
+            self._attr_state = round(self.operator.plano.custos_fixos(elapsed.days), 2)
+            _LOGGER.debug("FixedCost = %s", self._attr_state)
+        self.async_write_ha_state()
+
 
 
 class EletricityEntity(Entity):
@@ -214,13 +242,13 @@ class EletricityEntity(Entity):
         )
 
         @callback
-        async def initial_sync(event):
+        async def initial_sync(_):
             await self.timer_update(dt_util.now())
 
         self.hass.bus.async_listen_once(EVENT_HOMEASSISTANT_START, initial_sync)
 
     @callback
-    async def timer_update(self, now):
+    async def timer_update(self, _):
         """Change tariff based on timer."""
 
         new_state = self.operator.plano.tarifa_actual().value
@@ -238,6 +266,15 @@ class EletricityEntity(Entity):
                     SERVICE_SELECT_TARIFF,
                     {ATTR_ENTITY_ID: utility_meter, ATTR_TARIFF: self._state},
                 )
+
+    @property
+    def extra_state_attributes(self):
+        attrs = {
+            ATTR_CURRENT_COST: self.operator.plano.custo_tarifa(
+                self.operator.plano.tarifa_actual()
+            )
+        }
+        return attrs
 
     @property
     def state(self):

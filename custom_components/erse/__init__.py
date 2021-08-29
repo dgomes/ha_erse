@@ -2,7 +2,7 @@
 import asyncio
 import logging
 
-from pyerse.comercializador import Comercializador, Tarifa
+from pyerse.comercializador import Comercializador, Tarifa, Opcao_Horaria
 import voluptuous as vol
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
@@ -11,7 +11,6 @@ from homeassistant.components import persistent_notification
 
 from homeassistant.components.sensor import ATTR_LAST_RESET
 from pyerse.simulador import Simulador
-from pyerse.comercializador import Tarifa, Opcao_Horaria
 
 from .const import (
     CONF_POWER_COST,
@@ -28,11 +27,6 @@ from .const import (
 PLATFORMS = ["sensor"]
 
 _LOGGER = logging.getLogger(__name__)
-
-
-async def async_setup(hass: HomeAssistant, config: dict):
-    """Set up the Entidade Reguladora dos Serviços Energéticos component."""
-    return True
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
