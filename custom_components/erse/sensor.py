@@ -39,14 +39,14 @@ from .const import (
     CONF_METER_SUFFIX,
     CONF_UTILITY_METERS,
     DOMAIN,
+    ATTR_POWER_COST,
     ATTR_COST,
     ATTR_CURRENT_COST,
+    ATTR_TARIFFS,
+    ATTR_UTILITY_METERS
 )
 
 _LOGGER = logging.getLogger(__name__)
-
-ATTR_TARIFFS = "tariffs"
-ATTR_UTILITY_METERS = "utility meters"
 
 ICON = "mdi:transmission-tower"
 
@@ -152,6 +152,7 @@ class TariffCost(SensorEntity):
         @callback
         async def initial_sync(_):
             meter_state = self.hass.states.get(self._meter_entity)
+            self._attr_name = f"{meter_state.name} cost"
             await calc_costs(meter_state)
 
         self.hass.bus.async_listen_once(EVENT_HOMEASSISTANT_START, initial_sync)
@@ -215,6 +216,10 @@ class FixedCost(SensorEntity):
             _LOGGER.debug("FixedCost = %s", self._attr_state)
         self.async_write_ha_state()
 
+    @property
+    def extra_state_attributes(self):
+        attrs = {ATTR_POWER_COST: round(self.operator.plano.custo_potencia(), 2)}
+        return attrs
 
 
 class EletricityEntity(Entity):

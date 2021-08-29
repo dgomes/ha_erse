@@ -15,5 +15,8 @@ CONF_UTILITY_METERS = "utility_meter"
 
 UPDATE_LISTENER = "update_listener"
 
+ATTR_POWER_COST = "daily_power_cost"
 ATTR_COST = "unitary_cost"
 ATTR_CURRENT_COST = "current_unitary_cost"
+ATTR_TARIFFS = "tariffs"
+ATTR_UTILITY_METERS = "utility meters"
