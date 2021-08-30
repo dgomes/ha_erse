@@ -1,0 +1,59 @@
+simular:
+  name: Simular
+  description: Simulate best Energy plan through ERSE simulator
+  fields:
+    installed_power:
+      name: "Installed Power"
+      description: "Contracted installed power"
+      required: true
+      selector:
+        select:
+          options:
+            - 1.15
+            - 2.3
+            - 3.45
+            - 4.60
+            - 5.75
+            - 6.9
+            - 10.35
+            - 13.8
+            - 17.25
+            - 20.7
+            - 27.6
+            - 34.5
+            - 41.4
+    ponta:
+      name: "Ponta"
+      description: "Sensor with energy value for Ponta"
+      selector:
+        entity:
+          domain: sensor
+          device_class: energy
+    cheias:
+      name: "Cheias"
+      description: "Sensor with energy value for Cheias"
+      selector:
+        entity:
+          domain: sensor
+          device_class: energy
+    vazio:
+      name: "Vazio"
+      description: "Sensor with energy value for Vazio"
+      selector:
+        entity:
+          domain: sensor
+          device_class: energy
+    fora_de_vazio:
+      name: "Fora de Vazio"
+      description: "Sensor with energy value for Fora de Vazio"
+      selector:
+        entity:
+          domain: sensor
+          device_class: energy
+    normal:
+      name: "Normal"
+      description: "Sensor with energy value for Normal"
+      selector:
+        entity:
+          domain: sensor
+          device_class: energy
