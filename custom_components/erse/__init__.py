@@ -2,13 +2,14 @@
 import asyncio
 import logging
 
-from pyerse.comercializador import Comercializador, Tarifa, Opcao_Horaria
+from pyerse.comercializador import Comercializador, Tarifa, Opcao_Horaria, POTENCIA
 import voluptuous as vol
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.util import dt as dt_util
 from homeassistant.components import persistent_notification
-
+from homeassistant.helpers.config_validation import make_entity_service_schema
+import homeassistant.helpers.config_validation as cv
 from homeassistant.components.sensor import ATTR_LAST_RESET
 from pyerse.simulador import Simulador
 
@@ -19,14 +20,66 @@ from .const import (
     CONF_INSTALLED_POWER,
     CONF_PLAN,
     CONF_OPERATOR,
-    CONF_METER_SUFFIX,
+    CONF_PONTA,
+    CONF_CHEIAS,
+    CONF_VAZIO,
+    CONF_FORA_DE_VAZIO,
+    CONF_NORMAL,
 )
-
-# CONFIG_SCHEMA = vol.Schema({DOMAIN: vol.Schema({})}, extra=vol.ALLOW_EXTRA)
 
 PLATFORMS = ["sensor"]
 
 _LOGGER = logging.getLogger(__name__)
+
+
+def valid_plan(config):
+    # Tri-Horario
+    if (
+        CONF_PONTA in config
+        and CONF_CHEIAS in config
+        and CONF_VAZIO in config
+        and CONF_NORMAL not in config
+        and CONF_FORA_DE_VAZIO not in config
+    ):
+        return config
+
+    # Bi-Horario
+    if (
+        CONF_PONTA not in config
+        and CONF_CHEIAS not in config
+        and CONF_VAZIO in config
+        and CONF_NORMAL not in config
+        and CONF_FORA_DE_VAZIO in config
+    ):
+        return config
+
+    # Normal
+    if (
+        CONF_PONTA not in config
+        and CONF_CHEIAS not in config
+        and CONF_VAZIO not in config
+        and CONF_NORMAL in config
+        and CONF_FORA_DE_VAZIO not in config
+    ):
+        return config
+    raise vol.Invalid(
+        f"You must choose only the sensors relevant to you current plan (Tri-Horario, Bi-Horario, Normal)"
+    )
+
+
+SIMUL_SCHEMA = vol.Schema(
+    vol.All(
+        {
+            vol.Required(CONF_INSTALLED_POWER): vol.In(POTENCIA),
+            vol.Optional(CONF_PONTA): cv.entity_id,
+            vol.Optional(CONF_CHEIAS): cv.entity_id,
+            vol.Optional(CONF_VAZIO): cv.entity_id,
+            vol.Optional(CONF_FORA_DE_VAZIO): cv.entity_id,
+            vol.Optional(CONF_NORMAL): cv.entity_id,
+        },
+        valid_plan,
+    )
+)
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
@@ -55,15 +108,35 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         )
 
     async def async_simular(service):
-        data = {}
-        for tariff in hass.data[DOMAIN][entry.entry_id].plano.tarifas:
-            for meter_entity in entry.data[f"{tariff.name}{CONF_METER_SUFFIX}"]:
-                data[tariff] = int(float(hass.states.get(meter_entity).state))
-                last_reset = hass.states.get(meter_entity).attributes[ATTR_LAST_RESET]
+        data = {
+            Tarifa.PONTA: service.data.get(CONF_PONTA),
+            Tarifa.CHEIAS: service.data.get(CONF_CHEIAS),
+            Tarifa.VAZIO: service.data.get(CONF_VAZIO),
+            Tarifa.FORA_DE_VAZIO: service.data.get(CONF_FORA_DE_VAZIO),
+            Tarifa.NORMAL: service.data.get(CONF_NORMAL),
+        }
+
+        data = {
+            tarif: int(float(hass.states.get(meter_entity).state))
+            for tarif, meter_entity in data.items()
+            if meter_entity is not None
+        }
+
+        for meter in [CONF_PONTA, CONF_FORA_DE_VAZIO, CONF_NORMAL]:
+            if service.data.get(meter) is not None:
+                last_reset = hass.states.get(service.data.get(meter)).attributes[
+                    ATTR_LAST_RESET
+                ]
                 last_reset = dt_util.parse_datetime(last_reset).strftime("%Y-%m-%d")
 
-        potencia = entry.data[CONF_INSTALLED_POWER]
+        potencia = service.data[CONF_INSTALLED_POWER]
 
+        _LOGGER.debug(
+            "Simular potencia de %s, desde dia %s, com valores %s",
+            potencia,
+            last_reset,
+            data,
+        )
         simulador = Simulador(potencia, last_reset)
 
         _LOGGER.debug("simular simples")
@@ -128,7 +201,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             "Simulador ERSE",
         )
 
-    hass.services.async_register(DOMAIN, "simular", async_simular)
+    hass.services.async_register(DOMAIN, "simular", async_simular, schema=SIMUL_SCHEMA)
 
     entry.async_on_unload(entry.add_update_listener(async_update_options))
 
