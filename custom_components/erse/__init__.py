@@ -8,7 +8,6 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.util import dt as dt_util
 from homeassistant.components import persistent_notification
-from homeassistant.helpers.config_validation import make_entity_service_schema
 import homeassistant.helpers.config_validation as cv
 from homeassistant.components.sensor import ATTR_LAST_RESET
 from pyerse.simulador import Simulador
@@ -162,8 +161,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                     ),
                 )
             )
-
-        if Tarifa.PONTA in data:
             _LOGGER.debug("simular downgrade para bi-horario")
             simulacoes.append(
                 (
@@ -176,7 +173,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                 )
             )
 
-        if Tarifa.FORA_DE_VAZIO in data or Tarifa.PONTA in data:
+        if Tarifa.FORA_DE_VAZIO in data:
             _LOGGER.debug("simular bi-horario")
             simulacoes.append(
                 (
