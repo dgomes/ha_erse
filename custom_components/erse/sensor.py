@@ -9,7 +9,7 @@ import logging
 from homeassistant.components.sensor import (
     ATTR_LAST_RESET,
     DEVICE_CLASS_MONETARY,
-    STATE_CLASS_MEASUREMENT,
+    STATE_CLASS_TOTAL_INCREASING,
     SensorEntity,
 )
 from homeassistant.components.utility_meter.const import ATTR_TARIFF
@@ -32,8 +32,6 @@ from homeassistant.helpers.event import (
 from homeassistant.util import dt as dt_util
 from homeassistant.util import slugify
 
-from homeassistant.const import __version__ as HA_VERSION
-from awesomeversion import AwesomeVersion
 
 from .const import (
     CONF_METER_SUFFIX,
@@ -83,12 +81,10 @@ class TariffCost(SensorEntity):
         self.operator = hass.data[DOMAIN][entry_id]
 
         self._attr_device_class = DEVICE_CLASS_MONETARY
-        self._attr_state_class = STATE_CLASS_MEASUREMENT
+        self._attr_state_class = STATE_CLASS_TOTAL_INCREASING
         self._attr_unit_of_measurement = (
             CURRENCY_EURO  # TODO _attr_native_unit_of_measurement
         )
-        if AwesomeVersion(HA_VERSION) < "2021.9.0":
-            self._attr_last_reset = dt_util.utc_from_timestamp(0)
 
         self._attr_name = f"{meter_entity} cost"
         self._attr_unique_id = slugify(f"{entry_id} {meter_entity} cost")
@@ -122,26 +118,15 @@ class TariffCost(SensorEntity):
                 )
                 kwh = 0
 
-            if AwesomeVersion(HA_VERSION) >= "2021.9.0":
-                self._attr_native_value = round(
-                    self.operator.plano.custo_kWh_final(self._tariff, kwh), 2
-                )
-                _LOGGER.debug(
-                    "{%s} calc_costs(%s) = %s",
-                    self._attr_name,
-                    kwh,
-                    self._attr_native_value,
-                )
-            else:
-                self._attr_state = round(
-                    self.operator.plano.custo_kWh_final(self._tariff, kwh), 2
-                )
-                _LOGGER.debug(
-                    "{%s} calc_costs(%s) = %s",
-                    self._attr_name,
-                    kwh,
-                    self._attr_state,
-                )
+            self._attr_native_value = round(
+                self.operator.plano.custo_kWh_final(self._tariff, kwh), 2
+            )
+            _LOGGER.debug(
+                "{%s} calc_costs(%s) = %s",
+                self._attr_name,
+                kwh,
+                self._attr_native_value,
+            )
             self.async_write_ha_state()
 
         @callback
@@ -176,11 +161,10 @@ class FixedCost(SensorEntity):
         self.operator = hass.data[DOMAIN][entry_id]
 
         self._attr_device_class = DEVICE_CLASS_MONETARY
-        self._attr_state_class = STATE_CLASS_MEASUREMENT
+        self._attr_state_class = STATE_CLASS_TOTAL_INCREASING
         self._attr_unit_of_measurement = (
             CURRENCY_EURO  # TODO _attr_native_unit_of_measurement
         )
-        self._attr_last_reset = dt_util.utc_from_timestamp(0)
 
         self._attr_name = f"{self.operator} cost"
         self._attr_unique_id = slugify(f"{entry_id} {any_meter} fixed cost")
@@ -213,17 +197,10 @@ class FixedCost(SensorEntity):
 
         elapsed = now - last_reset
 
-        if AwesomeVersion(HA_VERSION) >= "2021.9.0":
-            self._attr_native_value = round(
-                self.operator.plano.custos_fixos(elapsed.days), 2
-            )
-            _LOGGER.debug("FixedCost = %s", self._attr_native_value)
-        else:
-            if elapsed.days == 0:
-                self._attr_last_reset = now
-
-            self._attr_state = round(self.operator.plano.custos_fixos(elapsed.days), 2)
-            _LOGGER.debug("FixedCost = %s", self._attr_state)
+        self._attr_native_value = round(
+            self.operator.plano.custos_fixos(elapsed.days), 2
+        )
+        _LOGGER.debug("FixedCost = %s", self._attr_native_value)
         self.async_write_ha_state()
 
     @property
