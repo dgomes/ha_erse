@@ -88,11 +88,11 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 data_schema=vol.Schema(
                     {
                         vol.Optional(CONF_UTILITY_METERS): cv.multi_select(
-                            [
-                                s.entity_id
+                            { 
+                                s.entity_id: s.name
                                 for s in self.hass.states.async_all()
                                 if s.domain == UTILITY_METER_DOMAIN
-                            ]
+                            } 
                         ),
                     }
                 ),
@@ -109,15 +109,15 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         if user_input is None:
             DATA_SCHEMA = vol.Schema(
                 {
-                    vol.Required(CONF_POWER_COST): float,
+                    vol.Required(CONF_POWER_COST): vol.Coerce(float),
                     **{
-                        vol.Required(tariff.name): float
+                        vol.Required(tariff.name): vol.Coerce(float)
                         for tariff in self.operator.plano.tarifas
                     },
                     **{
                         vol.Required(tariff.name + CONF_METER_SUFFIX): cv.multi_select(
-                            [
-                                s.entity_id
+                            { 
+                                s.entity_id: s.name
                                 for s in self.hass.states.async_all()
                                 if s.domain == SENSOR_DOMAIN
                                 and s.attributes.get(ATTR_UNIT_OF_MEASUREMENT)
@@ -125,7 +125,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                                     ENERGY_WATT_HOUR,
                                     ENERGY_KILO_WATT_HOUR,
                                 ]
-                            ]
+                            }
                         )
                         for tariff in self.operator.plano.tarifas
                     },
@@ -184,11 +184,11 @@ class ERSEOptionsFlow(config_entries.OptionsFlow):
                 {
                     vol.Required(
                         CONF_POWER_COST, default=self.costs[CONF_POWER_COST]
-                    ): float,
+                    ): vol.Coerce(float),
                     **{
                         vol.Required(
                             tariff.name, default=self.costs[tariff.name]
-                        ): float
+                        ): vol.Coerce(float)
                         for tariff in self.operator.plano.tarifas
                     },
                 }
