@@ -88,11 +88,11 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 data_schema=vol.Schema(
                     {
                         vol.Optional(CONF_UTILITY_METERS): cv.multi_select(
-                            { 
+                            {
                                 s.entity_id: s.name
                                 for s in self.hass.states.async_all()
                                 if s.domain == UTILITY_METER_DOMAIN
-                            } 
+                            }
                         ),
                     }
                 ),
@@ -116,7 +116,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     },
                     **{
                         vol.Required(tariff.name + CONF_METER_SUFFIX): cv.multi_select(
-                            { 
+                            {
                                 s.entity_id: s.name
                                 for s in self.hass.states.async_all()
                                 if s.domain == SENSOR_DOMAIN

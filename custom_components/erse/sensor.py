@@ -12,9 +12,11 @@ from homeassistant.components.sensor import (
     STATE_CLASS_TOTAL_INCREASING,
     SensorEntity,
 )
-from homeassistant.components.utility_meter.const import ATTR_TARIFF
-from homeassistant.components.utility_meter.const import DOMAIN as UTILITY_METER_DOMAIN
-from homeassistant.components.utility_meter.const import SERVICE_SELECT_TARIFF
+from homeassistant.components.select.const import (
+    DOMAIN as SELECT_DOMAIN,
+    SERVICE_SELECT_OPTION,
+    ATTR_OPTION,
+)
 from homeassistant.const import (
     ATTR_ENTITY_ID,
     CURRENCY_EURO,
@@ -22,6 +24,8 @@ from homeassistant.const import (
     ATTR_UNIT_OF_MEASUREMENT,
     ENERGY_WATT_HOUR,
     ENERGY_KILO_WATT_HOUR,
+    STATE_UNAVAILABLE,
+    STATE_UNKNOWN,
 )
 from homeassistant.core import callback
 from homeassistant.helpers.entity import Entity
@@ -52,7 +56,7 @@ ICON = "mdi:transmission-tower"
 async def async_setup_entry(hass, config_entry, async_add_entities):
     """Set up an electricity monitor from a Config Entry."""
 
-    entities = list()
+    entities = []
 
     if CONF_UTILITY_METERS in config_entry.data:
         entities.append(
@@ -104,17 +108,27 @@ class TariffCost(SensorEntity):
 
         async def calc_costs(meter_state):
 
-            if meter_state and meter_state.attributes[ATTR_UNIT_OF_MEASUREMENT] in [
-                ENERGY_WATT_HOUR,
-                ENERGY_KILO_WATT_HOUR,
-            ]:
-                if meter_state.attributes[ATTR_UNIT_OF_MEASUREMENT] == ENERGY_WATT_HOUR:
+            if (
+                meter_state
+                and ATTR_UNIT_OF_MEASUREMENT in meter_state.attributes
+                and meter_state.attributes[ATTR_UNIT_OF_MEASUREMENT]
+                in [
+                    ENERGY_WATT_HOUR,
+                    ENERGY_KILO_WATT_HOUR,
+                ]
+            ):
+                if meter_state.state in [STATE_UNAVAILABLE, STATE_UNKNOWN]:
+                    kwh = 0
+                elif (
+                    meter_state.attributes[ATTR_UNIT_OF_MEASUREMENT] == ENERGY_WATT_HOUR
+                ):
                     kwh = float(meter_state.state) / 1000
                 else:
                     kwh = float(meter_state.state)
             else:
                 _LOGGER.error(
-                    "Could not retrieve tariff sensor state or the sensor is not an energy sensor (wrong unit)"
+                    "Could not retrieve tariff sensor state or the sensor is not an energy sensor (wrong unit) from %s",
+                    meter_state,
                 )
                 kwh = 0
 
@@ -192,10 +206,12 @@ class FixedCost(SensorEntity):
     async def timer_update(self, now):
         """Update fixed costs as days go by."""
 
-        last_reset = self.hass.states.get(self._meter).attributes[ATTR_LAST_RESET]
-        last_reset = dt_util.parse_datetime(last_reset)
+        last_reset = self.hass.states.get(self._meter).attributes.get(ATTR_LAST_RESET)
 
-        elapsed = now - last_reset
+        if last_reset:
+            elapsed = now - dt_util.parse_datetime(last_reset)
+        else:
+            elapsed = now - now
 
         self._attr_native_value = round(
             self.operator.plano.custos_fixos(elapsed.days), 2
@@ -254,9 +270,9 @@ class EletricityEntity(Entity):
             for utility_meter in self._utility_meters:
                 _LOGGER.debug("Change %s to %s", utility_meter, self._state)
                 await self.hass.services.async_call(
-                    UTILITY_METER_DOMAIN,
-                    SERVICE_SELECT_TARIFF,
-                    {ATTR_ENTITY_ID: utility_meter, ATTR_TARIFF: self._state},
+                    SELECT_DOMAIN,
+                    SERVICE_SELECT_OPTION,
+                    {ATTR_ENTITY_ID: utility_meter, ATTR_OPTION: self._state},
                 )
 
     @property
