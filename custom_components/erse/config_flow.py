@@ -146,11 +146,10 @@ class ERSEOptionsFlow(config_entries.OptionsFlow):
 
     def __init__(self, config_entry):
         """Initialize options flow."""
-        config_entry.data[CONF_INSTALLED_POWER] = float(config_entry.data[CONF_INSTALLED_POWER])
 
         self.operator = Comercializador(
             config_entry.data[CONF_OPERATOR],
-            config_entry.data[CONF_INSTALLED_POWER],
+            float(config_entry.data[CONF_INSTALLED_POWER]),
             config_entry.data[CONF_PLAN],
             config_entry.data[CONF_CYCLE],
         )
