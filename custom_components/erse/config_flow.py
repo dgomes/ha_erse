@@ -5,8 +5,8 @@ import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 from pyerse.comercializador import Comercializador
 from pyerse.ciclos import Ciclo_Diario
+from pyerse.comercializador import POTENCIA
 
-from homeassistant.components.utility_meter.const import DOMAIN as UTILITY_METER_DOMAIN
 from homeassistant.components.sensor import DOMAIN as SENSOR_DOMAIN
 
 from homeassistant import config_entries
@@ -28,8 +28,11 @@ from .const import (
     DOMAIN,
 )
 
+from homeassistant.helpers import selector
+
 _LOGGER = logging.getLogger(__name__)
 
+POTENCIAS = [{"value": str(p), "label": f"{p} kVA"} for p in Comercializador.potencias()]
 
 class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for Entidade Reguladora dos Serviços Energéticos."""
@@ -51,8 +54,8 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 data_schema=vol.Schema(
                     {
                         vol.Required(CONF_OPERATOR): str,
-                        vol.Required(CONF_INSTALLED_POWER): vol.In(
-                            Comercializador.potencias()
+                        vol.Required(CONF_INSTALLED_POWER, default=str(POTENCIA[0])): selector.selector(
+                            {"select": {"options": POTENCIAS}}
                         ),
                         vol.Required(CONF_PLAN): vol.In(
                             Comercializador.opcao_horaria()
@@ -64,6 +67,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 ),
             )
 
+        user_input[CONF_INSTALLED_POWER] = float(user_input[CONF_INSTALLED_POWER])
         try:
             self.operator = Comercializador(
                 user_input[CONF_OPERATOR],
@@ -87,12 +91,8 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 step_id="utility_meter",
                 data_schema=vol.Schema(
                     {
-                        vol.Optional(CONF_UTILITY_METERS): cv.multi_select(
-                            {
-                                s.entity_id: s.name
-                                for s in self.hass.states.async_all()
-                                if s.domain == UTILITY_METER_DOMAIN
-                            }
+                        vol.Optional(CONF_UTILITY_METERS): selector.selector(
+                            {"entity": {"domain": "select", "integration": "utility_meter", "multiple": True}},
                         ),
                     }
                 ),
@@ -115,17 +115,8 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                         for tariff in self.operator.plano.tarifas
                     },
                     **{
-                        vol.Required(tariff.name + CONF_METER_SUFFIX): cv.multi_select(
-                            {
-                                s.entity_id: s.name
-                                for s in self.hass.states.async_all()
-                                if s.domain == SENSOR_DOMAIN
-                                and s.attributes.get(ATTR_UNIT_OF_MEASUREMENT)
-                                in [
-                                    ENERGY_WATT_HOUR,
-                                    ENERGY_KILO_WATT_HOUR,
-                                ]
-                            }
+                        vol.Required(tariff.name + CONF_METER_SUFFIX): selector.selector(
+                            {"entity": {"domain": "sensor", "device_class": "energy", "integration": "utility_meter", "multiple": True}},
                         )
                         for tariff in self.operator.plano.tarifas
                     },
@@ -155,6 +146,8 @@ class ERSEOptionsFlow(config_entries.OptionsFlow):
 
     def __init__(self, config_entry):
         """Initialize options flow."""
+        config_entry.data[CONF_INSTALLED_POWER] = float(config_entry.data[CONF_INSTALLED_POWER])
+
         self.operator = Comercializador(
             config_entry.data[CONF_OPERATOR],
             config_entry.data[CONF_INSTALLED_POWER],
