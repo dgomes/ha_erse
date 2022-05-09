@@ -72,6 +72,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
                 TariffCost(hass, config_entry.entry_id, tariff, meter_entity)
             )
 
+    # TODO filter out to create a FixedCost of the monthly utility_meter entity
     entities.append(FixedCost(hass, config_entry.entry_id, meter_entity))
 
     async_add_entities(entities)
@@ -86,8 +87,8 @@ class TariffCost(SensorEntity):
 
         self._attr_device_class = DEVICE_CLASS_MONETARY
         self._attr_state_class = STATE_CLASS_TOTAL_INCREASING
-        self._attr_unit_of_measurement = (
-            CURRENCY_EURO  # TODO _attr_native_unit_of_measurement
+        self._attr_native_unit_of_measurement = (
+            CURRENCY_EURO 
         )
 
         self._attr_name = f"{meter_entity} cost"
@@ -176,8 +177,8 @@ class FixedCost(SensorEntity):
 
         self._attr_device_class = DEVICE_CLASS_MONETARY
         self._attr_state_class = STATE_CLASS_TOTAL_INCREASING
-        self._attr_unit_of_measurement = (
-            CURRENCY_EURO  # TODO _attr_native_unit_of_measurement
+        self._attr_native_unit_of_measurement = (
+            CURRENCY_EURO
         )
 
         self._attr_name = f"{self.operator} cost"
