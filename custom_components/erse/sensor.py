@@ -9,7 +9,7 @@ import logging
 from homeassistant.components.sensor import (
     ATTR_LAST_RESET,
     SensorDeviceClass,
-    STATE_CLASS_TOTAL_INCREASING,
+    STATE_CLASS_TOTAL,
     SensorEntity,
 )
 from homeassistant.components.select.const import (
@@ -86,7 +86,7 @@ class TariffCost(SensorEntity):
         self.operator = hass.data[DOMAIN][entry_id]
 
         self._attr_device_class = SensorDeviceClass.MONETARY
-        self._attr_state_class = STATE_CLASS_TOTAL_INCREASING
+        self._attr_state_class = STATE_CLASS_TOTAL
         self._attr_native_unit_of_measurement = (
             CURRENCY_EURO 
         )
@@ -176,7 +176,7 @@ class FixedCost(SensorEntity):
         self.operator = hass.data[DOMAIN][entry_id]
 
         self._attr_device_class = SensorDeviceClass.MONETARY
-        self._attr_state_class = STATE_CLASS_TOTAL_INCREASING
+        self._attr_state_class = STATE_CLASS_TOTAL
         self._attr_native_unit_of_measurement = (
             CURRENCY_EURO
         )
