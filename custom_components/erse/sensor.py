@@ -6,6 +6,8 @@ at http://github.com/dgomes/home-assistant-custom-components/electricity/
 """
 import logging
 
+from datetime import timedelta
+
 from homeassistant.components.sensor import (
     ATTR_LAST_RESET,
     SensorDeviceClass,
@@ -77,7 +79,76 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     # TODO filter out to create a FixedCost of the monthly utility_meter entity
     entities.append(FixedCost(hass, config_entry.entry_id, meter_entity))
 
+    entities.append(TotalCost(hass, config_entry.entry_id, entities))
+
     async_add_entities(entities)
+
+
+class TotalCost(SensorEntity):
+    """Track total cost."""
+
+    def __init__(self, hass, entry_id, all_entities):
+        """Initialize cost tracker"""
+        self.operator = hass.data[DOMAIN][entry_id]
+
+        self._attr_device_class = SensorDeviceClass.MONETARY
+        self._attr_state_class = STATE_CLASS_TOTAL
+        self._attr_native_unit_of_measurement = CURRENCY_EURO
+
+        self._attr_name = f"Total cost"
+        self._attr_unique_id = slugify(f"{entry_id} total cost")
+
+        self._attr_should_poll = False
+
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, str(self.operator))},
+            name=f"{self.operator}",
+            manufacturer="ERSE",
+            model="Cost Tracker",
+        )
+        self._all_entities = all_entities
+
+    async def async_added_to_hass(self):
+        """Handle entity which will be tracked."""
+        await super().async_added_to_hass()
+
+        async def calc_costs():
+            try:
+                total = sum(
+                    float(self.hass.states.get(cost).state)
+                    for cost in self._all_entities
+                )
+
+                self._attr_native_value = round(total, 2)
+            except ValueError as err:
+                _LOGGER.error(err)
+                self._attr_native_value = None
+
+            self.async_write_ha_state()
+
+        @callback
+        async def async_increment_cost(event):
+            await calc_costs()
+
+        @callback
+        async def initial_sync(_):
+            # convert objects into entity_ids
+            self._all_entities = [
+                entity.entity_id
+                for entity in self._all_entities
+                if isinstance(entity, (TariffCost, FixedCost))
+            ]
+            _LOGGER.debug(self._all_entities)
+
+            self.async_on_remove(
+                async_track_state_change_event(
+                    self.hass, self._all_entities, async_increment_cost
+                )
+            )
+
+            await calc_costs()
+
+        self.hass.bus.async_listen_once(EVENT_HOMEASSISTANT_START, initial_sync)
 
 
 class TariffCost(SensorEntity):
@@ -89,9 +160,7 @@ class TariffCost(SensorEntity):
 
         self._attr_device_class = SensorDeviceClass.MONETARY
         self._attr_state_class = STATE_CLASS_TOTAL
-        self._attr_native_unit_of_measurement = (
-            CURRENCY_EURO 
-        )
+        self._attr_native_unit_of_measurement = CURRENCY_EURO
 
         self._attr_name = f"{meter_entity} cost"
         self._attr_unique_id = slugify(f"{entry_id} {meter_entity} cost")
@@ -107,7 +176,6 @@ class TariffCost(SensorEntity):
             model="Cost Tracker",
         )
 
-
     @property
     def extra_state_attributes(self):
         attrs = {ATTR_COST: self.operator.plano.custo_tarifa(self._tariff)}
@@ -118,7 +186,6 @@ class TariffCost(SensorEntity):
         await super().async_added_to_hass()
 
         async def calc_costs(meter_state):
-
             if (
                 meter_state
                 and ATTR_UNIT_OF_MEASUREMENT in meter_state.attributes
@@ -187,9 +254,7 @@ class FixedCost(SensorEntity):
 
         self._attr_device_class = SensorDeviceClass.MONETARY
         self._attr_state_class = STATE_CLASS_TOTAL
-        self._attr_native_unit_of_measurement = (
-            CURRENCY_EURO
-        )
+        self._attr_native_unit_of_measurement = CURRENCY_EURO
 
         self._attr_name = f"{self.operator} cost"
         self._attr_unique_id = slugify(f"{entry_id} {any_meter} fixed cost")
@@ -229,7 +294,7 @@ class FixedCost(SensorEntity):
         if last_reset:
             elapsed = now - dt_util.parse_datetime(last_reset)
         else:
-            elapsed = now - now
+            elapsed = timedelta(days=0)
 
         self._attr_native_value = round(
             self.operator.plano.custos_fixos(elapsed.days), 2

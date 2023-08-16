@@ -32,7 +32,10 @@ from homeassistant.helpers import selector
 
 _LOGGER = logging.getLogger(__name__)
 
-POTENCIAS = [{"value": str(p), "label": f"{p} kVA"} for p in Comercializador.potencias()]
+POTENCIAS = [
+    {"value": str(p), "label": f"{p} kVA"} for p in Comercializador.potencias()
+]
+
 
 class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for Entidade Reguladora dos Serviços Energéticos."""
@@ -54,9 +57,9 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 data_schema=vol.Schema(
                     {
                         vol.Required(CONF_OPERATOR): str,
-                        vol.Required(CONF_INSTALLED_POWER, default=str(POTENCIA[0])): selector.selector(
-                            {"select": {"options": POTENCIAS}}
-                        ),
+                        vol.Required(
+                            CONF_INSTALLED_POWER, default=str(POTENCIA[0])
+                        ): selector.selector({"select": {"options": POTENCIAS}}),
                         vol.Required(CONF_PLAN): vol.In(
                             Comercializador.opcao_horaria()
                         ),
@@ -92,7 +95,13 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 data_schema=vol.Schema(
                     {
                         vol.Optional(CONF_UTILITY_METERS): selector.selector(
-                            {"entity": {"domain": "select", "integration": "utility_meter", "multiple": True}},
+                            {
+                                "entity": {
+                                    "domain": "select",
+                                    "integration": "utility_meter",
+                                    "multiple": True,
+                                }
+                            },
                         ),
                     }
                 ),
@@ -115,8 +124,17 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                         for tariff in self.operator.plano.tarifas
                     },
                     **{
-                        vol.Required(tariff.name + CONF_METER_SUFFIX): selector.selector(
-                            {"entity": {"domain": "sensor", "device_class": "energy", "integration": "utility_meter", "multiple": True}},
+                        vol.Required(
+                            tariff.name + CONF_METER_SUFFIX
+                        ): selector.selector(
+                            {
+                                "entity": {
+                                    "domain": "sensor",
+                                    "device_class": "energy",
+                                    "integration": "utility_meter",
+                                    "multiple": True,
+                                }
+                            },
                         )
                         for tariff in self.operator.plano.tarifas
                     },
