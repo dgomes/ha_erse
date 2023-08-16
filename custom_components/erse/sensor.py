@@ -36,6 +36,8 @@ from homeassistant.helpers.event import (
 from homeassistant.util import dt as dt_util
 from homeassistant.util import slugify
 
+from homeassistant.helpers.device_registry import DeviceInfo
+
 
 from .const import (
     CONF_METER_SUFFIX,
@@ -97,6 +99,14 @@ class TariffCost(SensorEntity):
         self._tariff = tariff
         self._meter_entity = meter_entity
         self._attr_should_poll = False
+
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, str(self.operator))},
+            name=f"{self.operator}",
+            manufacturer="ERSE",
+            model="Cost Tracker",
+        )
+
 
     @property
     def extra_state_attributes(self):
@@ -187,6 +197,13 @@ class FixedCost(SensorEntity):
         self._meter = any_meter
         self._attr_should_poll = False
 
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, str(self.operator))},
+            name=f"{self.operator}",
+            manufacturer="ERSE",
+            model="Cost Tracker",
+        )
+
     async def async_added_to_hass(self):
         """Setups automations."""
         await super().async_added_to_hass()
@@ -240,6 +257,13 @@ class EletricityEntity(Entity):
             f"{entry_id} utility_meters {len(self._utility_meters)}"
         )
         self._attr_should_poll = False
+
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, str(self.operator))},
+            name=f"{self.operator}",
+            manufacturer="ERSE",
+            model="Cost Tracker",
+        )
 
     async def async_added_to_hass(self):
         """Setups all required entities and automations."""
