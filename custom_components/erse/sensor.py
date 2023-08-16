@@ -266,7 +266,7 @@ class EletricityEntity(Entity):
             _LOGGER.debug("Changing from %s to %s", self._state, new_state)
             self._state = new_state
 
-            await self.async_update_ha_state()
+            self.async_write_ha_state()
 
             for utility_meter in self._utility_meters:
                 _LOGGER.debug("Change %s to %s", utility_meter, self._state)
