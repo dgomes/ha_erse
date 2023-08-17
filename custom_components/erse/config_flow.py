@@ -11,11 +11,7 @@ from homeassistant.components.sensor import DOMAIN as SENSOR_DOMAIN
 
 from homeassistant import config_entries
 from homeassistant.core import callback
-from homeassistant.const import (
-    ATTR_UNIT_OF_MEASUREMENT,
-    ENERGY_WATT_HOUR,
-    ENERGY_KILO_WATT_HOUR,
-)
+
 
 from .const import (
     CONF_OPERATOR,
@@ -87,7 +83,6 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def async_step_utility_meter(self, user_input=None):
         """Handle the choice of the utility meter."""
-        errors = {}
 
         if user_input is None:
             return self.async_show_form(
