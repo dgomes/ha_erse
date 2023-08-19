@@ -7,9 +7,8 @@ at http://github.com/dgomes/home-assistant-custom-components/electricity/
 import logging
 from datetime import timedelta
 
-from homeassistant.components.select.const import ATTR_OPTION
+from homeassistant.components.select.const import ATTR_OPTION, SERVICE_SELECT_OPTION
 from homeassistant.components.select.const import DOMAIN as SELECT_DOMAIN
-from homeassistant.components.select.const import SERVICE_SELECT_OPTION
 from homeassistant.components.sensor import ATTR_LAST_RESET, SensorEntity
 from homeassistant.const import (ATTR_ENTITY_ID, ATTR_UNIT_OF_MEASUREMENT,
                                  ENERGY_KILO_WATT_HOUR, ENERGY_WATT_HOUR,
@@ -123,9 +122,7 @@ class TariffCost(ERSEMoneyEntity, SensorEntity):
 
         super().__init__(hass.data[DOMAIN][entry_id])
 
-        meter_name = hass.states.get(meter_entity).attributes.get("friendly_name")
-
-        self._attr_name = f"{meter_name}"
+        self._attr_name = hass.states.get(meter_entity).attributes.get("friendly_name")
         self._attr_unique_id = slugify(f"{entry_id} {meter_entity} cost")
 
         self._tariff = tariff
