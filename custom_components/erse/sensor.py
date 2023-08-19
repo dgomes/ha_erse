@@ -10,8 +10,6 @@ from datetime import timedelta
 
 from homeassistant.components.sensor import (
     ATTR_LAST_RESET,
-    SensorDeviceClass,
-    STATE_CLASS_TOTAL,
     SensorEntity,
 )
 from homeassistant.components.select.const import (
@@ -21,7 +19,6 @@ from homeassistant.components.select.const import (
 )
 from homeassistant.const import (
     ATTR_ENTITY_ID,
-    CURRENCY_EURO,
     EVENT_HOMEASSISTANT_START,
     ATTR_UNIT_OF_MEASUREMENT,
     ENERGY_WATT_HOUR,
@@ -51,6 +48,8 @@ from .const import (
     ATTR_TARIFFS,
     ATTR_UTILITY_METERS,
 )
+
+from .entity import ERSEEntity, ERSEMoneyEntity
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -84,28 +83,16 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     async_add_entities(entities)
 
 
-class TotalCost(SensorEntity):
+class TotalCost(ERSEMoneyEntity, SensorEntity):
     """Track total cost."""
+
+    _attr_name = "Total cost"
 
     def __init__(self, hass, entry_id, all_entities):
         """Initialize cost tracker"""
-        self.operator = hass.data[DOMAIN][entry_id]
+        super().__init__(hass.data[DOMAIN][entry_id])
 
-        self._attr_device_class = SensorDeviceClass.MONETARY
-        self._attr_state_class = STATE_CLASS_TOTAL
-        self._attr_native_unit_of_measurement = CURRENCY_EURO
-
-        self._attr_name = f"Total cost"
         self._attr_unique_id = slugify(f"{entry_id} total cost")
-
-        self._attr_should_poll = False
-
-        self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, str(self.operator))},
-            name=f"{self.operator}",
-            manufacturer="ERSE",
-            model="Cost Tracker",
-        )
         self._all_entities = all_entities
 
     async def async_added_to_hass(self):
@@ -124,6 +111,7 @@ class TotalCost(SensorEntity):
                 _LOGGER.error(err)
                 self._attr_native_value = None
 
+            _LOGGER.debug("Total Cost = %s", self._attr_native_value)
             self.async_write_ha_state()
 
         @callback
@@ -138,7 +126,7 @@ class TotalCost(SensorEntity):
                 for entity in self._all_entities
                 if isinstance(entity, (TariffCost, FixedCost))
             ]
-            _LOGGER.debug(self._all_entities)
+            _LOGGER.debug("Total Cost = sum(%s)", self._all_entities)
 
             self.async_on_remove(
                 async_track_state_change_event(
@@ -151,35 +139,25 @@ class TotalCost(SensorEntity):
         self.hass.bus.async_listen_once(EVENT_HOMEASSISTANT_START, initial_sync)
 
 
-class TariffCost(SensorEntity):
+class TariffCost(ERSEMoneyEntity, SensorEntity):
     """Track cost of kWh for a given tariff"""
 
     def __init__(self, hass, entry_id, tariff, meter_entity):
         """Initialize cost tracker"""
-        self.operator = hass.data[DOMAIN][entry_id]
 
-        self._attr_device_class = SensorDeviceClass.MONETARY
-        self._attr_state_class = STATE_CLASS_TOTAL
-        self._attr_native_unit_of_measurement = CURRENCY_EURO
+        super().__init__(hass.data[DOMAIN][entry_id])
 
-        self._attr_name = f"{meter_entity} cost"
+        meter_name = hass.states.get(meter_entity).attributes.get("friendly_name")
+
+        self._attr_name = f"{meter_name} cost"
         self._attr_unique_id = slugify(f"{entry_id} {meter_entity} cost")
 
         self._tariff = tariff
         self._meter_entity = meter_entity
-        self._attr_should_poll = False
-
-        self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, str(self.operator))},
-            name=f"{self.operator}",
-            manufacturer="ERSE",
-            model="Cost Tracker",
-        )
 
     @property
     def extra_state_attributes(self):
-        attrs = {ATTR_COST: self.operator.plano.custo_tarifa(self._tariff)}
-        return attrs
+        return {ATTR_COST: self._operator.plano.custo_tarifa(self._tariff)}
 
     async def async_added_to_hass(self):
         """Handle entity which will be tracked."""
@@ -211,7 +189,7 @@ class TariffCost(SensorEntity):
                 kwh = 0
 
             self._attr_native_value = round(
-                self.operator.plano.custo_kWh_final(self._tariff, kwh), 2
+                self._operator.plano.custo_kWh_final(self._tariff, kwh), 2
             )
             _LOGGER.debug(
                 "{%s} calc_costs(%s) = %s",
@@ -226,23 +204,24 @@ class TariffCost(SensorEntity):
             new_state = event.data.get("new_state")
             await calc_costs(new_state)
 
-        self.async_on_remove(
+        @callback
+        async def initial_sync(_):
+            meter_state = self.hass.states.get(self._meter_entity)
+            await calc_costs(meter_state)
+
+            self.async_on_remove(
             async_track_state_change_event(
                 self.hass, [self._meter_entity], async_increment_cost
             )
         )
 
-        @callback
-        async def initial_sync(_):
-            meter_state = self.hass.states.get(self._meter_entity)
-            self._attr_name = f"{meter_state.name} cost"
-            await calc_costs(meter_state)
-
         self.hass.bus.async_listen_once(EVENT_HOMEASSISTANT_START, initial_sync)
 
 
-class FixedCost(SensorEntity):
+class FixedCost(ERSEMoneyEntity, SensorEntity):
     """Track fixed costs."""
+
+    _attr_name = "Fixed cost"
 
     def __init__(self, hass, entry_id, any_meter) -> None:
         """Initialize fixed costs"""
@@ -250,38 +229,26 @@ class FixedCost(SensorEntity):
             _LOGGER.error("No meter sensor entities defined")
             return
 
-        self.operator = hass.data[DOMAIN][entry_id]
+        super().__init__(hass.data[DOMAIN][entry_id])
 
-        self._attr_device_class = SensorDeviceClass.MONETARY
-        self._attr_state_class = STATE_CLASS_TOTAL
-        self._attr_native_unit_of_measurement = CURRENCY_EURO
-
-        self._attr_name = f"{self.operator} cost"
         self._attr_unique_id = slugify(f"{entry_id} {any_meter} fixed cost")
 
         self._meter = any_meter
-        self._attr_should_poll = False
 
-        self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, str(self.operator))},
-            name=f"{self.operator}",
-            manufacturer="ERSE",
-            model="Cost Tracker",
-        )
 
     async def async_added_to_hass(self):
         """Setups automations."""
         await super().async_added_to_hass()
 
-        self.async_on_remove(
-            async_track_time_change(
-                self.hass, self.timer_update, hour=[0], minute=[0], second=[0]
-            )
-        )
-
         @callback
         async def initial_sync(_):
             await self.timer_update(dt_util.now())
+
+            self.async_on_remove(
+                async_track_time_change(
+                    self.hass, self.timer_update, hour=[0], minute=[0], second=[0]
+                )
+            )
 
         self.hass.bus.async_listen_once(EVENT_HOMEASSISTANT_START, initial_sync)
 
@@ -297,38 +264,31 @@ class FixedCost(SensorEntity):
             elapsed = timedelta(days=0)
 
         self._attr_native_value = round(
-            self.operator.plano.custos_fixos(elapsed.days), 2
+            self._operator.plano.custos_fixos(elapsed.days), 2
         )
-        _LOGGER.debug("FixedCost = %s", self._attr_native_value)
+        _LOGGER.debug("Fixed Cost = %s", self._attr_native_value)
         self.async_write_ha_state()
 
     @property
     def extra_state_attributes(self):
-        attrs = {ATTR_POWER_COST: round(self.operator.plano.custo_potencia(), 2)}
-        return attrs
+        return {ATTR_POWER_COST: round(self._operator.plano.custo_potencia(), 2)}
 
 
-class EletricityEntity(Entity):
+class EletricityEntity(ERSEEntity):
     """Representation of an Electricity Tariff tracker."""
+
+    _attr_name = "Tariff"
 
     def __init__(self, hass, entry_id, utility_meters):
         """Initialize an Electricity Tariff Tracker."""
-        self.operator = hass.data[DOMAIN][entry_id]
-        self._attr_name = str(self.operator)
+        super().__init__(hass.data[DOMAIN][entry_id])
         self._utility_meters = utility_meters
         self._state = None
         self._attr_icon = ICON
         self._attr_unique_id = slugify(
             f"{entry_id} utility_meters {len(self._utility_meters)}"
         )
-        self._attr_should_poll = False
 
-        self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, str(self.operator))},
-            name=f"{self.operator}",
-            manufacturer="ERSE",
-            model="Cost Tracker",
-        )
 
     async def async_added_to_hass(self):
         """Setups all required entities and automations."""
@@ -349,9 +309,9 @@ class EletricityEntity(Entity):
     async def timer_update(self, _):
         """Change tariff based on timer."""
 
-        new_state = self.operator.plano.tarifa_actual().value
+        new_state = self._operator.plano.tarifa_actual().value
 
-        if new_state != self._state:
+        if new_state != self._state or self._state is None:
             _LOGGER.debug("Changing from %s to %s", self._state, new_state)
             self._state = new_state
 
@@ -368,8 +328,8 @@ class EletricityEntity(Entity):
     @property
     def extra_state_attributes(self):
         attrs = {
-            ATTR_CURRENT_COST: self.operator.plano.custo_tarifa(
-                self.operator.plano.tarifa_actual()
+            ATTR_CURRENT_COST: self._operator.plano.custo_tarifa(
+                self._operator.plano.tarifa_actual()
             )
         }
         return attrs
@@ -383,7 +343,7 @@ class EletricityEntity(Entity):
     def capability_attributes(self):
         """Return capability attributes."""
         attr = {
-            ATTR_TARIFFS: self.operator.plano.tarifas,
+            ATTR_TARIFFS: self._operator.plano.tarifas,
             ATTR_UTILITY_METERS: self._utility_meters,
         }
         return attr
