@@ -1,13 +1,9 @@
 {
     "config": {
-        "error": {
-            "unknown": "Unexpected error"
-        },
+        "error": {"unknown": "Unexpected error"},
         "step": {
             "utility_meter": {
-                "data": {
-                    "utility_meter": "Utility Meter"
-                },
+                "data": {"utility_meter": "Utility Meter"},
                 "title": "Escolha o seu plano e Utility Meter"
             },
             "user": {
@@ -48,9 +44,22 @@
                     "FORA_DE_VAZIO": "Custo do kWh em Fora de Vazio",
                     "NORMAL": "Custo do kWh em Normal",
                     "CHEIAS": "Custo do kWh em Cheias",
-                    "PONTA": "Custo do kWh em Ponta"         
+                    "PONTA": "Custo do kWh em Ponta"
                 }
             }
         }
-      }
+    },
+    "entity": {
+        "sensor": {
+            "total_cost": {
+                "name": "Custo Total"
+            },
+            "fixed_cost": {
+              "name": "Custo Fixo"
+            },
+            "tariff": {
+              "name": "Tarifa"
+            }
+        }
+    }
 }

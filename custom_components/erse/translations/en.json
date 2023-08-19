@@ -1,8 +1,6 @@
 {
     "config": {
-        "error": {
-            "unknown": "Unexpected error"
-        },
+        "error": {"unknown": "Unexpected error"},
         "step": {
             "costs": {
                 "data": {
@@ -20,9 +18,7 @@
             },
             "utility_meter": {
                 "title": "Utility meters you want to control",
-                "data": {
-                  "utility_meter": "Utility Meter"
-                }
+                "data": {"utility_meter": "Utility Meter"}
             },
             "user": {
                 "data": {
@@ -41,13 +37,27 @@
         "step": {
             "init": {
                 "data": {
-                  "power_cost": "Cost of Power (day)",
-                  "VAZIO": "Cost of kWh in Vazio",
-                  "FORA_DE_VAZIO": "Cost of kWh in Fora de Vazio",
-                  "NORMAL": "Cost of kWh in Normal",
-                  "CHEIAS": "Cost of kWh in Cheias",
-                  "PONTA": "Cost of kWh in Ponta"            }
+                    "power_cost": "Cost of Power (day)",
+                    "VAZIO": "Cost of kWh in Vazio",
+                    "FORA_DE_VAZIO": "Cost of kWh in Fora de Vazio",
+                    "NORMAL": "Cost of kWh in Normal",
+                    "CHEIAS": "Cost of kWh in Cheias",
+                    "PONTA": "Cost of kWh in Ponta"
+                }
             }
         }
-      }
+    },
+    "entity": {
+        "sensor": {
+            "total_cost": {
+                "name": "Total Cost"
+            },
+            "fixed_cost": {
+              "name": "Fixed Cost"
+            },
+            "tariff": {
+              "name": "Tariff"
+            }
+        }
+    }
 }

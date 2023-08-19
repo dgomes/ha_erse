@@ -86,7 +86,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 class TotalCost(ERSEMoneyEntity, SensorEntity):
     """Track total cost."""
 
-    _attr_name = "Total cost"
+    _attr_translation_key = "total_cost"
 
     def __init__(self, hass, entry_id, all_entities):
         """Initialize cost tracker"""
@@ -149,7 +149,7 @@ class TariffCost(ERSEMoneyEntity, SensorEntity):
 
         meter_name = hass.states.get(meter_entity).attributes.get("friendly_name")
 
-        self._attr_name = f"{meter_name} cost"
+        self._attr_name = f"{meter_name}"
         self._attr_unique_id = slugify(f"{entry_id} {meter_entity} cost")
 
         self._tariff = tariff
@@ -221,7 +221,7 @@ class TariffCost(ERSEMoneyEntity, SensorEntity):
 class FixedCost(ERSEMoneyEntity, SensorEntity):
     """Track fixed costs."""
 
-    _attr_name = "Fixed cost"
+    _attr_translation_key = "fixed_cost"
 
     def __init__(self, hass, entry_id, any_meter) -> None:
         """Initialize fixed costs"""
@@ -276,7 +276,7 @@ class FixedCost(ERSEMoneyEntity, SensorEntity):
 class EletricityEntity(ERSEEntity):
     """Representation of an Electricity Tariff tracker."""
 
-    _attr_name = "Tariff"
+    _attr_translation_key = "tariff"
 
     def __init__(self, hass, entry_id, utility_meters):
         """Initialize an Electricity Tariff Tracker."""
@@ -291,37 +291,36 @@ class EletricityEntity(ERSEEntity):
     async def async_added_to_hass(self):
         """Setups all required entities and automations."""
 
-        self.async_on_remove(
-            async_track_time_change(
-                self.hass, self.timer_update, minute=range(0, 60, 15)
-            )
-        )
+        @callback
+        async def timer_update(_):
+            """Change tariff based on timer."""
+
+            new_state = self._operator.plano.tarifa_actual().value
+
+            if new_state != self._state or self._state is None:
+                _LOGGER.debug("Changing from %s to %s", self._state, new_state)
+                self._state = new_state
+                self.async_write_ha_state()
+
+                for utility_meter in self._utility_meters:
+                    _LOGGER.debug("Change %s to %s", utility_meter, self._state)
+                    await self.hass.services.async_call(
+                        SELECT_DOMAIN,
+                        SERVICE_SELECT_OPTION,
+                        {ATTR_ENTITY_ID: utility_meter, ATTR_OPTION: self._state},
+                    )
 
         @callback
         async def initial_sync(_):
-            await self.timer_update(dt_util.now())
+            await timer_update(None)
+
+            self.async_on_remove(
+                async_track_time_change(
+                    self.hass, timer_update, minute=range(0, 60, 15)
+                )
+            )
 
         self.hass.bus.async_listen_once(EVENT_HOMEASSISTANT_START, initial_sync)
-
-    @callback
-    async def timer_update(self, _):
-        """Change tariff based on timer."""
-
-        new_state = self._operator.plano.tarifa_actual().value
-
-        if new_state != self._state or self._state is None:
-            _LOGGER.debug("Changing from %s to %s", self._state, new_state)
-            self._state = new_state
-
-            self.async_write_ha_state()
-
-            for utility_meter in self._utility_meters:
-                _LOGGER.debug("Change %s to %s", utility_meter, self._state)
-                await self.hass.services.async_call(
-                    SELECT_DOMAIN,
-                    SERVICE_SELECT_OPTION,
-                    {ATTR_ENTITY_ID: utility_meter, ATTR_OPTION: self._state},
-                )
 
     @property
     def extra_state_attributes(self):

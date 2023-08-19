@@ -1,55 +1,68 @@
 {
-  "config": {
-    "step": {
-      "user": {
-        "title": "Which is your Operator",
-        "data": {
-          "operator": "Operator",
-          "installed_power": "Installed Power",
-          "plan": "Plan",
-          "cycle": "Cycle"
-        }
+	"config": {
+		"step": {
+			"user": {
+				"title": "Which is your Operator",
+				"data": {
+					"operator": "Operator",
+					"installed_power": "Installed Power",
+					"plan": "Plan",
+					"cycle": "Cycle"
+				}
+			},
+			"utility_meter": {
+				"title": "Utility meters you want to control",
+				"data": {
+					"utility_meter": "Utility Meter"
+				}
+			},
+			"costs": {
+				"title": "Costs",
+				"data": {
+					"power_cost": "Cost of Power (day)",
+					"VAZIO": "Cost of kWh in Vazio",
+					"FORA_DE_VAZIO": "Cost of kWh in Fora de Vazio",
+					"NORMAL": "Cost of kWh in Normal",
+					"CHEIAS": "Cost of kWh in Cheias",
+					"PONTA": "Cost of kWh in Ponta",
+					"VAZIO meter": "Sensor tracking Vazio",
+					"FORA_DE_VAZIO meter": "Sensor tracking Fora de Vazio",
+					"NORMAL meter": "Sensor tracking Normal",
+					"CHEIAS meter": "Sensor tracking Cheias",
+					"PONTA meter": "Sensor tracking Ponta"
+				}
+			}
+		},
+		"error": {
+			"unknown": "Unexpected error"
+		}
+	},
+	"options": {
+		"step": {
+			"init": {
+				"title": "Define new costs",
+				"data": {
+					"power_cost": "Cost of Power (day)",
+					"VAZIO": "Cost of kWh in Vazio",
+					"FORA_DE_VAZIO": "Cost of kWh in Fora de Vazio",
+					"NORMAL": "Cost of kWh in Normal",
+					"CHEIAS": "Cost of kWh in Cheias",
+					"PONTA": "Cost of kWh in Ponta"
+				}
+			}
+		}
+	},
+	"entity": {
+		"sensor": {
+			"total_cost": {
+				"name": "Total Cost"
+			},
+      "fixed_cost": {
+        "name": "Fixed Cost"
       },
-      "utility_meter": {
-        "title": "Utility meters you want to control",
-        "data": {
-          "utility_meter": "Utility Meter"
-        }
-      },
-      "costs": {
-        "title": "Costs",
-        "data": {
-          "power_cost": "Cost of Power (day)",
-          "VAZIO": "Cost of kWh in Vazio",
-          "FORA_DE_VAZIO": "Cost of kWh in Fora de Vazio",
-          "NORMAL": "Cost of kWh in Normal",
-          "CHEIAS": "Cost of kWh in Cheias",
-          "PONTA": "Cost of kWh in Ponta",
-          "VAZIO meter": "Sensor tracking Vazio",
-          "FORA_DE_VAZIO meter": "Sensor tracking Fora de Vazio",
-          "NORMAL meter": "Sensor tracking Normal",
-          "CHEIAS meter": "Sensor tracking Cheias",
-          "PONTA meter": "Sensor tracking Ponta"
-        }
+      "tariff": {
+        "name": "Tariff"
       }
-    },
-    "error": {
-      "unknown": "Unexpected error"
-    }
-  },
-  "options": {
-    "step": {
-        "init": {
-          "title": "Define new costs",
-          "data": {
-              "power_cost": "Cost of Power (day)",
-              "VAZIO": "Cost of kWh in Vazio",
-              "FORA_DE_VAZIO": "Cost of kWh in Fora de Vazio",
-              "NORMAL": "Cost of kWh in Normal",
-              "CHEIAS": "Cost of kWh in Cheias",
-              "PONTA": "Cost of kWh in Ponta"            
-            }
-        }
-    }
-  }
+		}
+	}
 }
