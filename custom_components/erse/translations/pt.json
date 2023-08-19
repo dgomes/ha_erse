@@ -3,7 +3,10 @@
         "error": {"unknown": "Unexpected error"},
         "step": {
             "utility_meter": {
-                "data": {"utility_meter": "Utility Meter"},
+                "data": {
+                    "utility_meter": "Utility Meter",
+                    "export_meter":	"Sensor Exportação"
+                },
                 "title": "Escolha o seu plano e Utility Meter"
             },
             "user": {

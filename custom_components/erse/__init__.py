@@ -9,13 +9,22 @@ from homeassistant.components.sensor import ATTR_LAST_RESET
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.util import dt as dt_util
-from pyerse.comercializador import (POTENCIA, Comercializador, Opcao_Horaria,
-                                    Tarifa)
+from pyerse.comercializador import POTENCIA, Comercializador, Opcao_Horaria, Tarifa
 from pyerse.simulador import Simulador
 
-from .const import (CONF_CHEIAS, CONF_CYCLE, CONF_FORA_DE_VAZIO,
-                    CONF_INSTALLED_POWER, CONF_NORMAL, CONF_OPERATOR,
-                    CONF_PLAN, CONF_PONTA, CONF_POWER_COST, CONF_VAZIO, DOMAIN)
+from .const import (
+    CONF_CHEIAS,
+    CONF_CYCLE,
+    CONF_FORA_DE_VAZIO,
+    CONF_INSTALLED_POWER,
+    CONF_NORMAL,
+    CONF_OPERATOR,
+    CONF_PLAN,
+    CONF_PONTA,
+    CONF_POWER_COST,
+    CONF_VAZIO,
+    DOMAIN,
+)
 
 PLATFORMS = ["sensor"]
 

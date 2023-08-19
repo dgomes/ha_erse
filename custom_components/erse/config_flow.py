@@ -10,9 +10,17 @@ from homeassistant.helpers import selector
 from pyerse.ciclos import Ciclo_Diario
 from pyerse.comercializador import POTENCIA, Comercializador
 
-from .const import (CONF_CYCLE, CONF_INSTALLED_POWER, CONF_METER_SUFFIX,
-                    CONF_OPERATOR, CONF_PLAN, CONF_POWER_COST,
-                    CONF_UTILITY_METERS, DOMAIN)
+from .const import (
+    CONF_CYCLE,
+    CONF_INSTALLED_POWER,
+    CONF_METER_SUFFIX,
+    CONF_OPERATOR,
+    CONF_PLAN,
+    CONF_POWER_COST,
+    CONF_UTILITY_METERS,
+    CONF_EXPORT_METER,
+    DOMAIN,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -86,12 +94,22 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                                 }
                             },
                         ),
+                        vol.Optional(CONF_EXPORT_METER): selector.selector(
+                            {
+                                "entity": {
+                                    "domain": SENSOR_DOMAIN,
+                                    "device_class": "energy",
+                                }
+                            },
+                        ),
                     }
                 ),
             )
 
         if CONF_UTILITY_METERS in user_input:
             self.info[CONF_UTILITY_METERS] = user_input[CONF_UTILITY_METERS]
+        if CONF_EXPORT_METER in user_input:
+            self.info[CONF_EXPORT_METER] = user_input[CONF_EXPORT_METER]
         return await self.async_step_costs()
 
     async def async_step_costs(self, user_input=None):

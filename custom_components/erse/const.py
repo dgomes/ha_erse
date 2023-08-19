@@ -7,6 +7,8 @@ CONF_INSTALLED_POWER = "installed_power"
 CONF_PLAN = "plan"
 CONF_CYCLE = "cycle"
 
+CONF_EXPORT_METER = "export_meter"
+
 CONF_METER_SUFFIX = " meter"
 CONF_METER = "meter"
 CONF_POWER_COST = "power_cost"
@@ -27,3 +29,4 @@ ATTR_TARIFFS = "tariffs"
 ATTR_UTILITY_METERS = "utility meters"
 
 COST_PRECISION = 2
+ENERGY_PRECISION = 3

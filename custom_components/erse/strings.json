@@ -13,7 +13,8 @@
 			"utility_meter": {
 				"title": "Utility meters you want to control",
 				"data": {
-					"utility_meter": "Utility Meter"
+					"utility_meter": "Utility Meter",
+					"export_meter":	"Export Sensor"
 				}
 			},
 			"costs": {

@@ -5,26 +5,43 @@ For more details about this component, please refer to the documentation
 at http://github.com/dgomes/home-assistant-custom-components/electricity/
 """
 import logging
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 from homeassistant.components.select.const import ATTR_OPTION, SERVICE_SELECT_OPTION
 from homeassistant.components.select.const import DOMAIN as SELECT_DOMAIN
 from homeassistant.components.sensor import ATTR_LAST_RESET, SensorEntity
-from homeassistant.const import (ATTR_ENTITY_ID, ATTR_UNIT_OF_MEASUREMENT,
-                                 ENERGY_KILO_WATT_HOUR, ENERGY_WATT_HOUR,
-                                 EVENT_HOMEASSISTANT_START, STATE_UNAVAILABLE,
-                                 STATE_UNKNOWN)
+from homeassistant.const import (
+    ATTR_ENTITY_ID,
+    ATTR_UNIT_OF_MEASUREMENT,
+    ENERGY_KILO_WATT_HOUR,
+    ENERGY_WATT_HOUR,
+    EVENT_HOMEASSISTANT_START,
+    STATE_UNAVAILABLE,
+    STATE_UNKNOWN,
+)
 from homeassistant.core import callback
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity import Entity
-from homeassistant.helpers.event import (async_track_state_change_event,
-                                         async_track_time_change)
+from homeassistant.helpers.event import (
+    async_track_state_change_event,
+    async_track_time_change,
+)
 from homeassistant.util import dt as dt_util
 from homeassistant.util import slugify
 
-from .const import (ATTR_COST, ATTR_CURRENT_COST, ATTR_POWER_COST,
-                    ATTR_TARIFFS, ATTR_UTILITY_METERS, CONF_METER_SUFFIX,
-                    CONF_UTILITY_METERS, COST_PRECISION, DOMAIN)
+from .const import (
+    ATTR_COST,
+    ATTR_CURRENT_COST,
+    ATTR_POWER_COST,
+    ATTR_TARIFFS,
+    ATTR_UTILITY_METERS,
+    CONF_METER_SUFFIX,
+    CONF_EXPORT_METER,
+    CONF_UTILITY_METERS,
+    COST_PRECISION,
+    ENERGY_PRECISION,
+    DOMAIN,
+)
 from .entity import ERSEEntity, ERSEMoneyEntity
 
 _LOGGER = logging.getLogger(__name__)
@@ -49,6 +66,23 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
         for meter_entity in config_entry.data[f"{tariff.name}{CONF_METER_SUFFIX}"]:
             entities.append(
                 TariffCost(hass, config_entry.entry_id, tariff, meter_entity)
+            )
+
+    if CONF_EXPORT_METER in config_entry.data:
+        for tariff in hass.data[DOMAIN][config_entry.entry_id].plano.tarifas:
+            entities.append(
+                NetMeterSensor(
+                    hass,
+                    config_entry.entry_id,
+                    config_entry.data[CONF_EXPORT_METER],
+                    tariff,
+                    [
+                        meter_entity
+                        for meter_entity in config_entry.data[
+                            f"{tariff.name}{CONF_METER_SUFFIX}"
+                        ]
+                    ],
+                )
             )
 
     # TODO filter out to create a FixedCost of the monthly utility_meter entity
@@ -101,7 +135,7 @@ class TotalCost(ERSEMoneyEntity, SensorEntity):
                 for entity in self._all_entities
                 if isinstance(entity, (TariffCost, FixedCost))
             ]
-            _LOGGER.debug("Total Cost = sum(%s)", self._all_entities)
+            _LOGGER.debug("Total Cost is the sum of %s", self._all_entities)
 
             self.async_on_remove(
                 async_track_state_change_event(
@@ -110,6 +144,135 @@ class TotalCost(ERSEMoneyEntity, SensorEntity):
             )
 
             await calc_costs()
+
+        self.hass.bus.async_listen_once(EVENT_HOMEASSISTANT_START, initial_sync)
+
+
+class NetMeterSensor(ERSEEntity, SensorEntity):
+    """Calculate Net Metering."""
+
+    _attr_suggested_display_precision = ENERGY_PRECISION
+
+    def __init__(self, hass, entry_id, export_entity, tariff, meter_entities):
+        """Initialize netmeter tracker"""
+        super().__init__(hass.data[DOMAIN][entry_id])
+
+        self._attr_name = f"{tariff.value} Net"
+        self._attr_unique_id = slugify(f"{entry_id} {tariff} netmeter")
+
+        self._export_entity = export_entity
+        self._tariff = tariff
+        self._meter_entities = meter_entities
+        self._last_total = None
+        self._last_export = None
+        self._attr_native_value = 0  # net metering TODO: Restore from storage
+
+    async def async_added_to_hass(self):
+        """Setups all required entities and automations."""
+
+        @callback
+        async def sum_meters():
+            """Sum all meters."""
+            total = 0
+            for meter in self._meter_entities:
+                try:
+                    total += float(self.hass.states.get(meter).state)
+                except ValueError as err:
+                    _LOGGER.error("Could not get state from %s: %s", meter, err)
+
+            _LOGGER.debug(
+                "%s sum_meters(%s) = %s",
+                self._tariff.value,
+                self._meter_entities,
+                total,
+            )
+            return total
+
+        @callback
+        async def timer_update(_):
+            """Change tariff based on timer."""
+
+            if (
+                self._tariff
+                != self._operator.plano.tarifa_actual(
+                    datetime.now() - timedelta(minutes=1)
+                ).value
+            ):  # We need the tariff of the previous minute because it might have just changed
+                self.async_write_ha_state()
+                return  # tariff not active
+
+            current_tariff = await sum_meters()
+            period_total = current_tariff - self._last_total
+            if period_total < 0:
+                _LOGGER.debug(
+                    "%s period_total < 0, probably a reset! using current value %s",
+                    self.friendly_name,
+                    current_tariff,
+                )
+                period_total = current_tariff
+                self._last_total = current_tariff
+            _LOGGER.debug("%s period_total = %s", self._tariff.value, period_total)
+
+            current_export = float(self.hass.states.get(self._export_entity).state)
+            period_export = current_export - self._last_export
+            if period_export < 0:
+                _LOGGER.debug(
+                    "%s period_export < 0, probably a reset! using current value %s",
+                    self.friendly_name,
+                    current_export,
+                )
+                period_export = current_export
+                self._last_export = current_export
+            _LOGGER.debug("%s period_export = %s", self._tariff.value, period_export)
+
+            # Did we consume from the network ?
+            balance = period_total - period_export
+            if balance > 0:
+                self._attr_native_value += balance
+
+            # update last values
+            self._last_total = current_tariff
+            self._last_export = current_export
+
+            self.async_write_ha_state()
+
+        @callback
+        async def initial_sync(_):
+            """Initialize netmeter counters."""
+
+            self._last_total = await sum_meters()
+            export_state = self.hass.states.get(self._export_entity)
+            self._last_export = float(export_state.state)
+
+            self._attr_native_unit_of_measurement = export_state.attributes.get(
+                ATTR_UNIT_OF_MEASUREMENT
+            )
+
+            """Validate that all meters have the same unit of measurement."""
+            for meter in self._meter_entities:
+                meter_state = self.hass.states.get(meter)
+                meter_unit = meter_state.attributes.get(ATTR_UNIT_OF_MEASUREMENT)
+                if self._attr_native_unit_of_measurement != meter_unit:
+                    _LOGGER.error(
+                        "Mismatching units of measurement for %s(%s) vs %s(%s)",
+                        self._export_entity,
+                        self._attr_native_unit_of_measurement,
+                        meter,
+                        meter_unit,
+                    )
+                    # TODO: raise HA issue
+                    return
+
+            await timer_update(None)
+
+            self.async_on_remove(
+                async_track_time_change(
+                    self.hass,
+                    timer_update,
+                    minute=range(0, 60, 15),
+                    second=0,  # TODO after dev change 5 to 15
+                )
+            )
 
         self.hass.bus.async_listen_once(EVENT_HOMEASSISTANT_START, initial_sync)
 
@@ -294,7 +457,7 @@ class EletricityEntity(ERSEEntity):
 
             self.async_on_remove(
                 async_track_time_change(
-                    self.hass, timer_update, minute=range(0, 60, 15)
+                    self.hass, timer_update, minute=range(0, 60, 15), second=0
                 )
             )
 

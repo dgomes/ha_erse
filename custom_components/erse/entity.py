@@ -1,8 +1,7 @@
 """Support for ERSE entities."""
 from __future__ import annotations
 
-from homeassistant.components.sensor import (STATE_CLASS_TOTAL,
-                                             SensorDeviceClass)
+from homeassistant.components.sensor import STATE_CLASS_TOTAL, SensorDeviceClass
 from homeassistant.const import CURRENCY_EURO
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity import Entity, EntityDescription
