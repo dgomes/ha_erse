@@ -13,6 +13,7 @@ from homeassistant.const import (
     CURRENCY_EURO,
 )
 
+
 class ERSEEntity(Entity):
     """Defines a base ERSE entity."""
 
@@ -35,13 +36,12 @@ class ERSEEntity(Entity):
             name=f"{self._operator}",
             manufacturer="ERSE",
             model="Cost Tracker",
-        )                         
-    
+        )
+
+
 class ERSEMoneyEntity(ERSEEntity):
     """Defines a monetary ERSE entity."""
 
     _attr_device_class = SensorDeviceClass.MONETARY
     _attr_state_class = STATE_CLASS_TOTAL
     _attr_native_unit_of_measurement = CURRENCY_EURO
-
-    

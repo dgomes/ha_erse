@@ -210,10 +210,10 @@ class TariffCost(ERSEMoneyEntity, SensorEntity):
             await calc_costs(meter_state)
 
             self.async_on_remove(
-            async_track_state_change_event(
-                self.hass, [self._meter_entity], async_increment_cost
+                async_track_state_change_event(
+                    self.hass, [self._meter_entity], async_increment_cost
+                )
             )
-        )
 
         self.hass.bus.async_listen_once(EVENT_HOMEASSISTANT_START, initial_sync)
 
@@ -234,7 +234,6 @@ class FixedCost(ERSEMoneyEntity, SensorEntity):
         self._attr_unique_id = slugify(f"{entry_id} {any_meter} fixed cost")
 
         self._meter = any_meter
-
 
     async def async_added_to_hass(self):
         """Setups automations."""
@@ -288,7 +287,6 @@ class EletricityEntity(ERSEEntity):
         self._attr_unique_id = slugify(
             f"{entry_id} utility_meters {len(self._utility_meters)}"
         )
-
 
     async def async_added_to_hass(self):
         """Setups all required entities and automations."""
