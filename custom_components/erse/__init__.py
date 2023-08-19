@@ -2,29 +2,20 @@
 import asyncio
 import logging
 
-from pyerse.comercializador import Comercializador, Tarifa, Opcao_Horaria, POTENCIA
+import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
+from homeassistant.components import persistent_notification
+from homeassistant.components.sensor import ATTR_LAST_RESET
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.util import dt as dt_util
-from homeassistant.components import persistent_notification
-import homeassistant.helpers.config_validation as cv
-from homeassistant.components.sensor import ATTR_LAST_RESET
+from pyerse.comercializador import (POTENCIA, Comercializador, Opcao_Horaria,
+                                    Tarifa)
 from pyerse.simulador import Simulador
 
-from .const import (
-    CONF_POWER_COST,
-    DOMAIN,
-    CONF_CYCLE,
-    CONF_INSTALLED_POWER,
-    CONF_PLAN,
-    CONF_OPERATOR,
-    CONF_PONTA,
-    CONF_CHEIAS,
-    CONF_VAZIO,
-    CONF_FORA_DE_VAZIO,
-    CONF_NORMAL,
-)
+from .const import (CONF_CHEIAS, CONF_CYCLE, CONF_FORA_DE_VAZIO,
+                    CONF_INSTALLED_POWER, CONF_NORMAL, CONF_OPERATOR,
+                    CONF_PLAN, CONF_PONTA, CONF_POWER_COST, CONF_VAZIO, DOMAIN)
 
 PLATFORMS = ["sensor"]
 

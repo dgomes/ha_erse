@@ -5,50 +5,27 @@ For more details about this component, please refer to the documentation
 at http://github.com/dgomes/home-assistant-custom-components/electricity/
 """
 import logging
-
 from datetime import timedelta
 
-from homeassistant.components.sensor import (
-    ATTR_LAST_RESET,
-    SensorEntity,
-)
-from homeassistant.components.select.const import (
-    DOMAIN as SELECT_DOMAIN,
-    SERVICE_SELECT_OPTION,
-    ATTR_OPTION,
-)
-from homeassistant.const import (
-    ATTR_ENTITY_ID,
-    EVENT_HOMEASSISTANT_START,
-    ATTR_UNIT_OF_MEASUREMENT,
-    ENERGY_WATT_HOUR,
-    ENERGY_KILO_WATT_HOUR,
-    STATE_UNAVAILABLE,
-    STATE_UNKNOWN,
-)
+from homeassistant.components.select.const import ATTR_OPTION
+from homeassistant.components.select.const import DOMAIN as SELECT_DOMAIN
+from homeassistant.components.select.const import SERVICE_SELECT_OPTION
+from homeassistant.components.sensor import ATTR_LAST_RESET, SensorEntity
+from homeassistant.const import (ATTR_ENTITY_ID, ATTR_UNIT_OF_MEASUREMENT,
+                                 ENERGY_KILO_WATT_HOUR, ENERGY_WATT_HOUR,
+                                 EVENT_HOMEASSISTANT_START, STATE_UNAVAILABLE,
+                                 STATE_UNKNOWN)
 from homeassistant.core import callback
+from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity import Entity
-from homeassistant.helpers.event import (
-    async_track_state_change_event,
-    async_track_time_change,
-)
+from homeassistant.helpers.event import (async_track_state_change_event,
+                                         async_track_time_change)
 from homeassistant.util import dt as dt_util
 from homeassistant.util import slugify
 
-from homeassistant.helpers.device_registry import DeviceInfo
-
-
-from .const import (
-    CONF_METER_SUFFIX,
-    CONF_UTILITY_METERS,
-    DOMAIN,
-    ATTR_POWER_COST,
-    ATTR_COST,
-    ATTR_CURRENT_COST,
-    ATTR_TARIFFS,
-    ATTR_UTILITY_METERS,
-)
-
+from .const import (ATTR_COST, ATTR_CURRENT_COST, ATTR_POWER_COST,
+                    ATTR_TARIFFS, ATTR_UTILITY_METERS, CONF_METER_SUFFIX,
+                    CONF_UTILITY_METERS, COST_PRECISION, DOMAIN)
 from .entity import ERSEEntity, ERSEMoneyEntity
 
 _LOGGER = logging.getLogger(__name__)
@@ -99,14 +76,13 @@ class TotalCost(ERSEMoneyEntity, SensorEntity):
         """Handle entity which will be tracked."""
         await super().async_added_to_hass()
 
+        @callback
         async def calc_costs():
             try:
-                total = sum(
+                self._attr_native_value = sum(
                     float(self.hass.states.get(cost).state)
                     for cost in self._all_entities
                 )
-
-                self._attr_native_value = round(total, 2)
             except ValueError as err:
                 _LOGGER.error(err)
                 self._attr_native_value = None
@@ -163,6 +139,7 @@ class TariffCost(ERSEMoneyEntity, SensorEntity):
         """Handle entity which will be tracked."""
         await super().async_added_to_hass()
 
+        @callback
         async def calc_costs(meter_state):
             if (
                 meter_state
@@ -188,9 +165,10 @@ class TariffCost(ERSEMoneyEntity, SensorEntity):
                 )
                 kwh = 0
 
-            self._attr_native_value = round(
-                self._operator.plano.custo_kWh_final(self._tariff, kwh), 2
+            self._attr_native_value = self._operator.plano.custo_kWh_final(
+                self._tariff, kwh
             )
+
             _LOGGER.debug(
                 "{%s} calc_costs(%s) = %s",
                 self._attr_name,
@@ -262,15 +240,18 @@ class FixedCost(ERSEMoneyEntity, SensorEntity):
         else:
             elapsed = timedelta(days=0)
 
-        self._attr_native_value = round(
-            self._operator.plano.custos_fixos(elapsed.days), 2
-        )
+        self._attr_native_value = self._operator.plano.custos_fixos(elapsed.days)
+
         _LOGGER.debug("Fixed Cost = %s", self._attr_native_value)
         self.async_write_ha_state()
 
     @property
     def extra_state_attributes(self):
-        return {ATTR_POWER_COST: round(self._operator.plano.custo_potencia(), 2)}
+        return {
+            ATTR_POWER_COST: round(
+                self._operator.plano.custo_potencia(), COST_PRECISION
+            )
+        }
 
 
 class EletricityEntity(ERSEEntity):

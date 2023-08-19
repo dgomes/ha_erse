@@ -25,3 +25,5 @@ ATTR_COST = "unitary_cost"
 ATTR_CURRENT_COST = "current_unitary_cost"
 ATTR_TARIFFS = "tariffs"
 ATTR_UTILITY_METERS = "utility meters"
+
+COST_PRECISION = 2
