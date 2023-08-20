@@ -64,5 +64,11 @@
               "name": "Tarifa"
             }
         }
+    },
+	"issues": {
+		"unit_of_measurement_missmatch": {
+			"title": "{meter_entity} tem uma unidade de medida diferente de {export_entity}",
+			"description": "A unidade de medida de {meter_entity} é {meter_unit} e a unidade de medida de {export_entity} é {export_unit}. Todas as entidades devem ter a mesma unidade de medida."
+		}
     }
 }

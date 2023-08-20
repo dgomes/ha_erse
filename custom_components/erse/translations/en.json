@@ -62,5 +62,11 @@
               "name": "Tariff"
             }
         }
+    },
+	"issues": {
+		"unit_of_measurement_missmatch": {
+			"title": "{meter_entity} has a different unit of measurement than {export_entity}",
+			"description": "The unit of measurement of {meter_entity} is {meter_unit} and the unit of measurement of {export_entity} is {export_unit}. All meters must have the same unit of measurement."
+		}
     }
 }

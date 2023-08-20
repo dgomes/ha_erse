@@ -10,6 +10,7 @@ import logging
 from datetime import datetime, timedelta
 from typing import Any, Final, Self
 from dataclasses import dataclass
+from homeassistant.helpers import issue_registry as ir
 
 from homeassistant.components.select.const import ATTR_OPTION, SERVICE_SELECT_OPTION
 from homeassistant.components.select.const import DOMAIN as SELECT_DOMAIN
@@ -228,7 +229,7 @@ class NetMeterSensor(ERSEEntity, RestoreSensor):
         self._meter_entities = meter_entities
         self._last_total = None
         self._last_export = None
-        self._attr_native_value = 0  # net metering TODO: Restore from storage
+        self._attr_native_value = 0  # net metering
 
     async def async_added_to_hass(self):
         """Setups all required entities and automations."""
@@ -352,7 +353,21 @@ class NetMeterSensor(ERSEEntity, RestoreSensor):
                         meter,
                         meter_unit,
                     )
-                    # TODO: raise HA issue
+                    ir.async_create_issue(
+                        self.hass,
+                        DOMAIN,
+                        "unit_of_measurement_missmatch",
+                        is_fixable=False,
+                        is_persistent=True,
+                        severity=ir.IssueSeverity.ERROR,
+                        translation_key="unit_of_measurement_missmatch",
+                        translation_placeholders={
+                            "export_entity": self._export_entity,
+                            "export_unit": self._attr_native_unit_of_measurement,
+                            "meter_entity": meter,
+                            "meter_unit": meter_unit,
+                        },
+                    )
                     return
 
             await timer_update(None)
