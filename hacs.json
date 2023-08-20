@@ -1,6 +1,6 @@
 {
   "name": "Entidade Reguladora dos Serviços Energéticos",
   "country": "PT",
-  "homeassistant": "2022.4.0",
+  "homeassistant": "2023.7.0",
   "render_readme": true
 }

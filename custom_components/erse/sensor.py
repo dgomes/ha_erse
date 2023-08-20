@@ -227,9 +227,9 @@ class NetMeterSensor(ERSEEntity, RestoreSensor):
         self._export_entity = export_entity
         self._tariff = tariff
         self._meter_entities = meter_entities
-        self._last_total = None
-        self._last_export = None
-        self._attr_native_value = 0  # net metering
+        self._last_total: float | None = None
+        self._last_export: float | None = None
+        self._attr_native_value: float = 0  # net metering
 
     async def async_added_to_hass(self):
         """Setups all required entities and automations."""
