@@ -230,6 +230,7 @@ class NetMeterSensor(ERSEEntity, RestoreSensor):
         self._last_total: float | None = None
         self._last_export: float | None = None
         self._attr_native_value: float = 0  # net metering
+        self._last_balance_datetime: datetime | None = None
 
     async def async_added_to_hass(self):
         """Setups all required entities and automations."""
