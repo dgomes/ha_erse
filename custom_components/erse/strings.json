@@ -41,7 +41,6 @@
 	"options": {
 		"step": {
 			"init": {
-				"title": "Define new costs",
 				"data": {
 					"power_cost": "Cost of Power (day)",
 					"VAZIO": "Cost of kWh in Vazio",
