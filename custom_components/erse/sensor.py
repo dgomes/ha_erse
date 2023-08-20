@@ -222,6 +222,7 @@ class NetMeterSensor(ERSEEntity, RestoreSensor):
 
         self._attr_name = f"{tariff.value} Net"
         self._attr_unique_id = slugify(f"{entry_id} {tariff} netmeter")
+        self._attr_native_unit_of_measurement = ENERGY_KILO_WATT_HOUR
 
         self._export_entity = export_entity
         self._tariff = tariff
@@ -323,6 +324,7 @@ class NetMeterSensor(ERSEEntity, RestoreSensor):
             """Initialize netmeter counters."""
 
             if self._last_balance_datetime is None:
+                self._last_balance_datetime = datetime.now()
                 in_same_net_meter_period = False
             else:
                 in_same_net_meter_period = (
