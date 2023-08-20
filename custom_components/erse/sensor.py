@@ -4,8 +4,12 @@ Component to track electricity tariff.
 For more details about this component, please refer to the documentation
 at http://github.com/dgomes/home-assistant-custom-components/electricity/
 """
+from __future__ import annotations
+
 import logging
 from datetime import datetime, timedelta
+from typing import Any, Final, Self
+from dataclasses import dataclass
 
 from homeassistant.components.select.const import ATTR_OPTION, SERVICE_SELECT_OPTION
 from homeassistant.components.select.const import DOMAIN as SELECT_DOMAIN
@@ -28,6 +32,13 @@ from homeassistant.helpers.event import (
 )
 from homeassistant.util import dt as dt_util
 from homeassistant.util import slugify
+from homeassistant.components.sensor import (
+    PLATFORM_SCHEMA,
+    RestoreSensor,
+    SensorDeviceClass,
+    SensorExtraStoredData,
+    SensorStateClass,
+)
 
 from .const import (
     ATTR_COST,
@@ -93,6 +104,56 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     async_add_entities(entities)
 
 
+@dataclass
+class NetMeterSensorExtraStoredData(SensorExtraStoredData):
+    """Object to store extra NetMeterSensor data."""
+
+    last_total: float | None
+    last_export: float | None
+    last_balance_datetime: datetime | None
+
+    def as_dict(self) -> dict[str, Any]:
+        """Return dictionary version of this object."""
+        data = super().as_dict()
+        data["last_total"] = self.last_total
+        data["last_export"] = self.last_export
+        if isinstance(self.last_balance_datetime, (datetime)):
+            data["last_balance_datetime"] = self.last_balance_datetime.isoformat()
+        return data
+
+    @classmethod
+    def from_dict(cls, restored: dict[str, Any]) -> Self | None:
+        """Initialize a stored sensor state from a dict."""
+        extra = SensorExtraStoredData.from_dict(restored)
+        if extra is None:
+            return None
+
+        try:
+            last_total = float(restored.get("last_total"))
+        except (TypeError, ValueError):
+            last_total = None
+
+        try:
+            last_export = float(restored.get("last_export"))
+        except (TypeError, ValueError):
+            last_export = None
+
+        try:
+            last_balance_datetime: datetime | None = dt_util.parse_datetime(
+                restored.get("last_reset")
+            )
+        except (TypeError, ValueError):
+            last_balance_datetime = None
+
+        return cls(
+            extra.native_value,
+            extra.native_unit_of_measurement,
+            last_total,
+            last_export,
+            last_balance_datetime,
+        )
+
+
 class TotalCost(ERSEMoneyEntity, SensorEntity):
     """Track total cost."""
 
@@ -148,9 +209,11 @@ class TotalCost(ERSEMoneyEntity, SensorEntity):
         self.hass.bus.async_listen_once(EVENT_HOMEASSISTANT_START, initial_sync)
 
 
-class NetMeterSensor(ERSEEntity, SensorEntity):
+class NetMeterSensor(ERSEEntity, RestoreSensor):
     """Calculate Net Metering."""
 
+    _attr_device_class = SensorDeviceClass.ENERGY
+    _attr_state_class = SensorStateClass.TOTAL_INCREASING
     _attr_suggested_display_precision = ENERGY_PRECISION
 
     def __init__(self, hass, entry_id, export_entity, tariff, meter_entities):
@@ -169,6 +232,24 @@ class NetMeterSensor(ERSEEntity, SensorEntity):
 
     async def async_added_to_hass(self):
         """Setups all required entities and automations."""
+
+        if (last_sensor_data := await self.async_get_last_sensor_data()) is not None:
+            self._attr_native_value = last_sensor_data.native_value
+            self._attr_native_unit_of_measurement = (
+                last_sensor_data.native_unit_of_measurement
+            )
+            self._last_total = last_sensor_data.last_total
+            self._last_export = last_sensor_data.last_export
+            self._last_balance_datetime = last_sensor_data.last_balance_datetime
+
+            _LOGGER.debug(
+                "Restored state %s(%s) and last_total = %s, last_export = %s, last_balance_datetime = %s",
+                self._attr_native_value,
+                self._attr_native_unit_of_measurement,
+                self._last_total,
+                self._last_export,
+                self._last_balance_datetime,
+            )
 
         @callback
         async def sum_meters():
@@ -191,6 +272,7 @@ class NetMeterSensor(ERSEEntity, SensorEntity):
         @callback
         async def timer_update(_):
             """Change tariff based on timer."""
+            self._last_balance_datetime = datetime.now()
 
             if (
                 self._tariff
@@ -240,13 +322,23 @@ class NetMeterSensor(ERSEEntity, SensorEntity):
         async def initial_sync(_):
             """Initialize netmeter counters."""
 
-            self._last_total = await sum_meters()
-            export_state = self.hass.states.get(self._export_entity)
-            self._last_export = float(export_state.state)
+            if self._last_balance_datetime is None:
+                in_same_net_meter_period = False
+            else:
+                in_same_net_meter_period = (
+                    datetime.now() - self._last_balance_datetime
+                    <= timedelta(minutes=15)
+                )
 
-            self._attr_native_unit_of_measurement = export_state.attributes.get(
-                ATTR_UNIT_OF_MEASUREMENT
-            )
+            if self._last_total is None or not in_same_net_meter_period:
+                self._last_total = await sum_meters()
+            if self._last_export is None or not in_same_net_meter_period:
+                export_state = self.hass.states.get(self._export_entity)
+                self._last_export = float(export_state.state)
+
+                self._attr_native_unit_of_measurement = export_state.attributes.get(
+                    ATTR_UNIT_OF_MEASUREMENT
+                )
 
             """Validate that all meters have the same unit of measurement."""
             for meter in self._meter_entities:
@@ -275,6 +367,28 @@ class NetMeterSensor(ERSEEntity, SensorEntity):
             )
 
         self.hass.bus.async_listen_once(EVENT_HOMEASSISTANT_START, initial_sync)
+
+    @property
+    def extra_restore_state_data(self) -> NetMeterSensorExtraStoredData:
+        """Return sensor specific state data to be restored."""
+        return NetMeterSensorExtraStoredData(
+            self.native_value,
+            self.native_unit_of_measurement,
+            self._last_total,
+            self._last_export,
+            self._last_balance_datetime,
+        )
+
+    async def async_get_last_sensor_data(
+        self,
+    ) -> NetMeterSensorExtraStoredData | None:
+        """Restore Net Meter Sensor Extra Stored Data."""
+        if (restored_last_extra_data := await self.async_get_last_extra_data()) is None:
+            return None
+
+        return NetMeterSensorExtraStoredData.from_dict(
+            restored_last_extra_data.as_dict()
+        )
 
 
 class TariffCost(ERSEMoneyEntity, SensorEntity):
