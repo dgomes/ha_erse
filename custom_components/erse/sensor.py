@@ -290,7 +290,7 @@ class NetMeterSensor(ERSEEntity, RestoreSensor):
             if period_total < 0:
                 _LOGGER.debug(
                     "%s period_total < 0, probably a reset! using current value %s",
-                    self.friendly_name,
+                    self.name,
                     current_tariff,
                 )
                 period_total = current_tariff
