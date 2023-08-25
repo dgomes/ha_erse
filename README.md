@@ -23,6 +23,26 @@ Your `utility_meter` must have the proper tarifs:
 
 That is it!
 
+## Example `utility_meter` configuration
+
+```
+utility_meter:            
+  daily_energy:                         
+    source: sensor.energia_rede_importada
+    cycle: daily                       
+    tariffs:
+      - Fora de Vazio
+      - Vazio 
+  monthly_energy:
+    source: sensor.energia_rede_importada
+    cycle: monthly
+    tariffs:        
+      - Fora de Vazio                                        
+      - Vazio        
+    offset:           
+      days: 20           
+```
+
 # Help
 
 Join me at [CPHA Discord](https://discord.gg/Mh9mTEA)
