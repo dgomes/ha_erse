@@ -416,7 +416,6 @@ class TariffCost(ERSEMoneyEntity, SensorEntity):
 
         super().__init__(hass.data[DOMAIN][entry_id])
 
-        self._attr_name = hass.states.get(meter_entity).attributes.get("friendly_name")
         self._attr_unique_id = slugify(f"{entry_id} {meter_entity} cost")
 
         self._tariff = tariff
@@ -476,6 +475,7 @@ class TariffCost(ERSEMoneyEntity, SensorEntity):
         @callback
         async def initial_sync(_):
             meter_state = self.hass.states.get(self._meter_entity)
+            self._attr_name = meter_state.attributes.get("friendly_name")
             await calc_costs(meter_state)
 
             self.async_on_remove(
