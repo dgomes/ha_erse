@@ -7,7 +7,7 @@ This components is for energy clients in Portugal, and fully automates the trans
 
 # Configuration
 
-Go to **Settings** >> **Devices &  Services** in the UI. Click the button with `+` sign on the integrations page and from the list of integrations, select **ERSE**.
+Go to **Settings** >> **Devices & Services** in the UI. Click the button with `+` sign on the integrations page and from the list of integrations, select **ERSE**.
 
 Type in your Energy Provider (EDP, GALP, Iberdrola), Power installed and the tariff plan and cycle (default is Ciclo Diário).
 
@@ -42,6 +42,8 @@ utility_meter:
     offset:           
       days: 20           
 ```
+
+For more information go the [utility meter help page](https://www.home-assistant.io/integrations/utility_meter/)
 
 # Help
 
