@@ -442,7 +442,7 @@ class TariffCost(ERSEMoneyEntity, SensorEntity):
                 if meter_state.state in [STATE_UNAVAILABLE, STATE_UNKNOWN]:
                     kwh = 0
                 elif (
-                    meter_state.attributes[ATTR_UNIT_OF_MEASUREMENT] == UnitOfEnergy.ENERGY_WATT_HOUR
+                    meter_state.attributes[ATTR_UNIT_OF_MEASUREMENT] == UnitOfEnergy.WATT_HOUR
                 ):
                     kwh = float(meter_state.state) / 1000
                 else:
