@@ -1,7 +1,7 @@
 """Support for ERSE entities."""
 from __future__ import annotations
 
-from homeassistant.components.sensor import STATE_CLASS_TOTAL, SensorDeviceClass
+from homeassistant.components.sensor import SensorStateClass, SensorDeviceClass
 from homeassistant.const import CURRENCY_EURO
 from homeassistant.helpers.entity import Entity, DeviceInfo
 from pyerse.comercializador import Comercializador
@@ -38,6 +38,6 @@ class ERSEMoneyEntity(ERSEEntity):
     """Defines a monetary ERSE entity."""
 
     _attr_device_class = SensorDeviceClass.MONETARY
-    _attr_state_class = STATE_CLASS_TOTAL
+    _attr_state_class = SensorStateClass.TOTAL
     _attr_native_unit_of_measurement = CURRENCY_EURO
     _attr_suggested_display_precision = COST_PRECISION

@@ -18,11 +18,10 @@ from homeassistant.components.sensor import ATTR_LAST_RESET, SensorEntity
 from homeassistant.const import (
     ATTR_ENTITY_ID,
     ATTR_UNIT_OF_MEASUREMENT,
-    ENERGY_KILO_WATT_HOUR,
-    ENERGY_WATT_HOUR,
     EVENT_HOMEASSISTANT_START,
     STATE_UNAVAILABLE,
     STATE_UNKNOWN,
+    UnitOfEnergy
 )
 from homeassistant.core import callback
 from homeassistant.helpers.entity import Entity
@@ -222,7 +221,7 @@ class NetMeterSensor(ERSEEntity, RestoreSensor):
 
         self._attr_name = f"{tariff.value} Net"
         self._attr_unique_id = slugify(f"{entry_id} {tariff} netmeter")
-        self._attr_native_unit_of_measurement = ENERGY_KILO_WATT_HOUR
+        self._attr_native_unit_of_measurement = UnitOfEnergy.KILO_WATT_HOUR
 
         self._export_entity = export_entity
         self._tariff = tariff
@@ -436,8 +435,8 @@ class TariffCost(ERSEMoneyEntity, SensorEntity):
                 and ATTR_UNIT_OF_MEASUREMENT in meter_state.attributes
                 and meter_state.attributes[ATTR_UNIT_OF_MEASUREMENT]
                 in [
-                    ENERGY_WATT_HOUR,
-                    ENERGY_KILO_WATT_HOUR,
+                    UnitOfEnergy.WATT_HOUR,
+                    UnitOfEnergy.KILO_WATT_HOUR,
                 ]
             ):
                 if meter_state.state in [STATE_UNAVAILABLE, STATE_UNKNOWN]:
