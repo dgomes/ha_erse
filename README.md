@@ -23,6 +23,66 @@ Your `utility_meter` must have the proper tarifs:
 
 That is it!
 
+---
+
+## **Detailed User Guide for Configuring HA_ERSE**
+
+### Step 1: Create a Utility Meter Helper
+1. Navigate to **Settings** → **Devices & Services** → **Helpers**.
+2. Click **Add Helper** and select **Utility Meter**.
+3. Fill in the following details:
+   - **Name**: Enter a descriptive name (e.g., `Energia`).
+   - **Input Sensor**: Select your energy sensor (e.g., `Shelly 3em Casa total active power`).
+   - **Meter Reset Cycle**: Set this to `Monthly`.
+   - **Meter Reset Offset**: Enter the day your electricity bill resets (e.g., `22`).
+   - **Supported Tariffs**: Add `Vazio` and `Fora de Vazio` for Bi-Horário plans.
+4. Enable **Net Consumption** if you use solar energy.
+5. Save the utility meter.
+
+![image](https://github.com/user-attachments/assets/4de9cf42-f554-496d-b6ab-b19c4836898b)
+![image](https://github.com/user-attachments/assets/38868198-225f-4b8e-b094-0dded0e765aa)
+
+
+---
+
+### Step 2: Initialize Tariffs
+1. After creating the helper, ensure both tariffs have values:
+   - Go to the **Sensors** configuration (e.g., your Shelly 3em sensor).
+   - Manually switch between the tariffs `Vazio` and `Fora de Vazio` for a few minutes each.
+2. This step initializes the tariffs, which are required for HA_ERSE to function correctly.
+
+---
+
+### Step 3: Configure HA_ERSE
+1. Go to **Settings** → **Devices & Services** → **Integrations**.
+2. Add the HA_ERSE integration and configure:
+   - **Operator Name**: Enter your electricity provider (e.g., `EDP`).
+   - **Installed Power**: Set the value from your contract (e.g., `13.8 kVA`).
+   - **Plan**: Select your tariff plan (e.g., `Bi-Horário`).
+   - **Cycle**: Choose the billing cycle (`Ciclo Semanal` or `Ciclo Diário`).
+3. Select the **Utility Meter** created earlier.
+4. Configure costs and sensors:
+   - Enter the cost per kWh for `Vazio` and `Fora de Vazio` tariffs.
+   - Assign the appropriate sensors for each tariff (e.g., `Energia Vazio` and `Energia Fora de Vazio`).
+
+![image](https://github.com/user-attachments/assets/c143e0aa-6752-40bd-b299-a8ee6234142c)
+![image](https://github.com/user-attachments/assets/576a2787-bbee-4560-96e9-12f3f25d86b7)
+
+---
+
+### Step 4: Add to Energy Dashboard
+1. Navigate to **Settings** → **Dashboards** → **Energy**.
+2. Under **Grid Consumption**, add:
+   - The `Vazio` tariff with its balance sensor.
+   - The `Fora de Vazio` tariff with its balance sensor.
+3. If using solar energy, configure **Return to Grid** using the appropriate sensor (e.g., `Shelly 3em Casa total active returned energy`).
+
+![image](https://github.com/user-attachments/assets/0fc1c8a3-2b39-4afb-b7c6-71af5b160cd5)
+![image](https://github.com/user-attachments/assets/80e396db-e2b7-49fb-af2e-e36e3a632c2d)
+
+
+---
+
 ## Example `utility_meter` configuration
 
 ```
