@@ -4,6 +4,7 @@ Component to track electricity tariff.
 For more details about this component, please refer to the documentation
 at http://github.com/dgomes/home-assistant-custom-components/electricity/
 """
+
 from __future__ import annotations
 
 import logging
@@ -12,16 +13,17 @@ from typing import Any, Final, Self
 from dataclasses import dataclass
 from homeassistant.helpers import issue_registry as ir
 
-from homeassistant.components.select.const import ATTR_OPTION, SERVICE_SELECT_OPTION
 from homeassistant.components.select.const import DOMAIN as SELECT_DOMAIN
 from homeassistant.components.sensor import ATTR_LAST_RESET, SensorEntity
 from homeassistant.const import (
     ATTR_ENTITY_ID,
+    ATTR_OPTION,
     ATTR_UNIT_OF_MEASUREMENT,
     EVENT_HOMEASSISTANT_START,
+    SERVICE_SELECT_OPTION,
     STATE_UNAVAILABLE,
     STATE_UNKNOWN,
-    UnitOfEnergy
+    UnitOfEnergy,
 )
 from homeassistant.core import callback
 from homeassistant.helpers.entity import Entity
@@ -442,7 +444,8 @@ class TariffCost(ERSEMoneyEntity, SensorEntity):
                 if meter_state.state in [STATE_UNAVAILABLE, STATE_UNKNOWN]:
                     kwh = 0
                 elif (
-                    meter_state.attributes[ATTR_UNIT_OF_MEASUREMENT] == UnitOfEnergy.WATT_HOUR
+                    meter_state.attributes[ATTR_UNIT_OF_MEASUREMENT]
+                    == UnitOfEnergy.WATT_HOUR
                 ):
                     kwh = float(meter_state.state) / 1000
                 else:
