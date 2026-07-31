@@ -23,6 +23,28 @@ Your `utility_meter` must have the proper tarifs:
 
 That is it!
 
+## Tariff sensor attributes
+
+The tariff sensor carries the following attributes:
+
+| Attribute | Description |
+|---|---|
+| `current_unitary_cost` | Cost per kWh of the tariff currently in force. |
+| `next_change` | When the current tariff ends, as a local ISO 8601 timestamp. |
+| `next_tariff` | The tariff that takes over at `next_change`. |
+
+`next_change` and `next_tariff` are absent for `Simples` plans, which have a single tariff and therefore no changes.
+
+They are useful to show how long the current period still has to run, or to schedule loads for the next `Vazio` period:
+
+```yaml
+template:
+  - sensor:
+      - name: Next tariff change
+        device_class: timestamp
+        state: "{{ state_attr('sensor.YOUR_TARIFF_SENSOR', 'next_change') }}"
+```
+
 ---
 
 ## **Detailed User Guide for Configuring HA_ERSE**
