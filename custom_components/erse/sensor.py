@@ -44,6 +44,8 @@ from homeassistant.components.sensor import (
 from .const import (
     ATTR_COST,
     ATTR_CURRENT_COST,
+    ATTR_NEXT_CHANGE,
+    ATTR_NEXT_TARIFF,
     ATTR_POWER_COST,
     ATTR_TARIFFS,
     ATTR_UTILITY_METERS,
@@ -598,12 +600,35 @@ class EletricityEntity(ERSEEntity):
 
     @property
     def extra_state_attributes(self):
-        attrs = {
-            ATTR_CURRENT_COST: self._operator.plano.custo_tarifa(
-                self._operator.plano.tarifa_actual()
-            )
-        }
+        plano = self._operator.plano
+        attrs = {ATTR_CURRENT_COST: plano.custo_tarifa(plano.tarifa_actual())}
+
+        if (next_change := self._next_change()) is not None:
+            attrs[ATTR_NEXT_CHANGE] = next_change.isoformat()
+            attrs[ATTR_NEXT_TARIFF] = plano.tarifa_actual(next_change).value
+
         return attrs
+
+    def _next_change(self) -> datetime | None:
+        """When the current tariff ends, or None if the plan has a single tariff.
+
+        Plano.intervalo() yields tariff intervals starting at the current one.
+        Only the end of that first interval is used: its start is the start of
+        the current *periodo horario*, which for Bi-Horaria can be later than
+        the start of the tariff block (see the TODO in pyerse).
+        """
+        plano = self._operator.plano
+
+        if len(plano.tarifas) < 2:
+            return None
+
+        try:
+            _, next_change = next(plano.intervalo())
+        except StopIteration:
+            # Opcao_Horaria.SIMPLES returns instead of yielding.
+            return None
+
+        return next_change.replace(tzinfo=dt_util.DEFAULT_TIME_ZONE)
 
     @property
     def state(self):
