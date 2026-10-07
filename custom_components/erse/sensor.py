@@ -168,6 +168,20 @@ class TotalCost(ERSEMoneyEntity, SensorEntity):
 
         self._attr_unique_id = slugify(f"{entry_id} total cost")
         self._all_entities = all_entities
+        self._meter_entities = []
+
+    def _update_last_reset(self):
+        """Use the most recent last_reset of the source utility meters."""
+        resets = []
+        for meter in self._meter_entities:
+            state = self.hass.states.get(meter)
+            if state is None:
+                continue
+            parsed = dt_util.parse_datetime(str(state.attributes.get(ATTR_LAST_RESET)))
+            if parsed is not None:
+                resets.append(parsed)
+        if resets:
+            self._attr_last_reset = max(resets)
 
     async def async_added_to_hass(self):
         """Handle entity which will be tracked."""
@@ -175,6 +189,16 @@ class TotalCost(ERSEMoneyEntity, SensorEntity):
 
         @callback
         async def calc_costs():
+            self._update_last_reset()
+            unavailable = any(
+                (state := self.hass.states.get(meter)) is None
+                or state.state in (STATE_UNAVAILABLE, STATE_UNKNOWN)
+                for meter in self._meter_entities
+            )
+            if unavailable:
+                self._attr_native_value = None
+                self.async_write_ha_state()
+                return
             try:
                 self._attr_native_value = sum(
                     float(self.hass.states.get(cost).state)
@@ -193,6 +217,15 @@ class TotalCost(ERSEMoneyEntity, SensorEntity):
 
         @callback
         async def initial_sync(_):
+            self._meter_entities = list(
+                dict.fromkeys(
+                    entity._meter_entity
+                    if isinstance(entity, TariffCost)
+                    else entity._meter
+                    for entity in self._all_entities
+                    if isinstance(entity, (TariffCost, FixedCost))
+                )
+            )
             # convert objects into entity_ids
             self._all_entities = [
                 entity.entity_id
