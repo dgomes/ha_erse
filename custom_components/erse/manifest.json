@@ -14,7 +14,7 @@
   "iot_class": "assumed_state",
   "issue_tracker": "https://github.com/dgomes/ha_erse/issues",
   "requirements": [
-    "pyerse==0.0.4"
+    "pyerse==0.0.7"
   ],
   "ssdp": [],
   "version": "2.2.0",
