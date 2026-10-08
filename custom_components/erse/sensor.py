@@ -60,6 +60,9 @@ from .entity import ERSEEntity, ERSEMoneyEntity
 
 _LOGGER = logging.getLogger(__name__)
 
+# Search horizon for the next tariff change: 8 days of quarter hours.
+NEXT_CHANGE_MAX_STEPS: Final = 8 * 24 * 4
+
 ICON = "mdi:transmission-tower"
 
 
@@ -645,23 +648,25 @@ class EletricityEntity(ERSEEntity):
     def _next_change(self) -> datetime | None:
         """When the current tariff ends, or None if the plan has a single tariff.
 
-        Plano.intervalo() yields tariff intervals starting at the current one.
-        Only the end of that first interval is used: its start is the start of
-        the current *periodo horario*, which for Bi-Horaria can be later than
-        the start of the tariff block (see the TODO in pyerse).
+        Every ERSE period boundary falls on a quarter hour, so step forward in
+        15-minute increments until Plano.tarifa_actual() returns a different
+        tariff. This uses only the pyerse API pinned in manifest.json
+        (Plano.intervalo() exists only on unreleased pyerse master).
         """
         plano = self._operator.plano
 
         if len(plano.tarifas) < 2:
             return None
 
-        try:
-            _, next_change = next(plano.intervalo())
-        except StopIteration:
-            # Opcao_Horaria.SIMPLES returns instead of yielding.
-            return None
+        now = datetime.now()
+        current = plano.tarifa_actual(now)
+        step = now.replace(second=0, microsecond=0) - timedelta(minutes=now.minute % 15)
+        for _ in range(NEXT_CHANGE_MAX_STEPS):
+            step += timedelta(minutes=15)
+            if plano.tarifa_actual(step) != current:
+                return step.replace(tzinfo=dt_util.DEFAULT_TIME_ZONE)
 
-        return next_change.replace(tzinfo=dt_util.DEFAULT_TIME_ZONE)
+        return None
 
     @property
     def state(self):
