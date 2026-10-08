@@ -4,6 +4,7 @@ import logging
 
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
+from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.components import persistent_notification
 from homeassistant.components.sensor import ATTR_LAST_RESET
 from homeassistant.config_entries import ConfigEntry
@@ -211,6 +212,9 @@ async def async_update_options(hass: HomeAssistant, config_entry: ConfigEntry) -
             Tarifa(tariff), config_entry.options[tariff.name]
         )
     operador.plano.definir_custo_potencia(config_entry.options[CONF_POWER_COST])
+    async_dispatcher_send(
+        hass, f"{DOMAIN}_{config_entry.entry_id}_options_updated"
+    )
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):

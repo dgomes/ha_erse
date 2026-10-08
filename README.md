@@ -23,6 +23,31 @@ Your `utility_meter` must have the proper tarifs:
 
 That is it!
 
+## Consumption VAT
+
+Energy prices entered in the configuration must exclude taxes. Cost sensors use
+mainland Portugal's rules effective from January 2025: 6% VAT on the first
+200 kWh per 30 billed days for contracted power up to and including 6.9 kVA,
+and 23% on the remainder. Above 6.9 kVA, all consumption has 23% VAT.
+The allowance is shared proportionally across all configured tariff meters.
+Electricity excise duty is added separately with 23% VAT.
+
+Use meters with the same billing reset and period. The running estimate prorates
+the allowance from `last_reset` through today, including the current day, and
+updates at midnight. Without `last_reset`, it assumes 30 days.
+The **Large-family benefit recognized by your electricity supplier** option is
+available during setup and in the integration options, and defaults to off.
+Enable it only after proving your household's large-family status (five or more
+people) to your electricity supplier. It raises the allowance to 300 kWh per
+30 days, still only for contracted power up to 6.9 kVA. The benefit is not
+automatic; configuring this integration does not register it with your supplier.
+See [Law 38/2024](https://files.diariodarepublica.pt/1s/2024/08/15200/0001500016.pdf)
+and [Portaria 247-A/2020](https://files.dre.pt/1s/2020/10/20301/0000200005.pdf).
+Regional VAT rates are not currently configurable.
+These sensors estimate current bills; they do not recalculate historical bills.
+
+See [ERSE's explanation](https://www.erse.pt/media/0eydrnj1/ersexplica_iva-fatura_2025.pdf).
+
 ## Tariff sensor attributes
 
 The tariff sensor carries the following attributes:

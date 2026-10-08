@@ -1,11 +1,13 @@
 {
     "config": {
-        "error": {"unknown": "Unexpected error"},
+        "error": {
+            "unknown": "Unexpected error"
+        },
         "step": {
             "utility_meter": {
                 "data": {
                     "utility_meter": "Utility Meter",
-                    "export_meter":	"Sensor Exportação"
+                    "export_meter": "Sensor Exportação"
                 },
                 "title": "Escolha o seu plano e Utility Meter"
             },
@@ -14,9 +16,13 @@
                     "operator": "Operador",
                     "installed_power": "Installed Power",
                     "plan": "Plan",
-                    "cycle": "Cycle"
+                    "cycle": "Cycle",
+                    "large_family": "Benefício de família numerosa reconhecido pelo fornecedor"
                 },
-                "title": "Qual é o seu Operador"
+                "title": "Qual é o seu Operador",
+                "data_description": {
+                    "large_family": "Ative apenas se comprovou junto do fornecedor a condição de família numerosa (cinco ou mais pessoas). O limite de 300 kWh por 30 dias não é automático e só se aplica a potências até 6,9 kVA."
+                }
             },
             "costs": {
                 "data": {
@@ -35,7 +41,7 @@
                 "title": "Custos e Sensores"
             }
         },
-        "title": "Entidade Reguladora dos Servi\u00e7os Energ\u00e9ticos"
+        "title": "Entidade Reguladora dos Serviços Energéticos"
     },
     "options": {
         "step": {
@@ -46,7 +52,11 @@
                     "FORA_DE_VAZIO": "Custo do kWh em Fora de Vazio",
                     "NORMAL": "Custo do kWh em Normal",
                     "CHEIAS": "Custo do kWh em Cheias",
-                    "PONTA": "Custo do kWh em Ponta"
+                    "PONTA": "Custo do kWh em Ponta",
+                    "large_family": "Benefício de família numerosa reconhecido pelo fornecedor"
+                },
+                "data_description": {
+                    "large_family": "Ative apenas se comprovou junto do fornecedor a condição de família numerosa (cinco ou mais pessoas). O limite de 300 kWh por 30 dias não é automático e só se aplica a potências até 6,9 kVA."
                 }
             }
         }
@@ -57,17 +67,17 @@
                 "name": "Custo Total"
             },
             "fixed_cost": {
-              "name": "Custo Fixo"
+                "name": "Custo Fixo"
             },
             "tariff": {
-              "name": "Tarifa"
+                "name": "Tarifa"
             }
         }
     },
-	"issues": {
-		"unit_of_measurement_missmatch": {
-			"title": "{meter_entity} tem uma unidade de medida diferente de {export_entity}",
-			"description": "A unidade de medida de {meter_entity} é {meter_unit} e a unidade de medida de {export_entity} é {export_unit}. Todas as entidades devem ter a mesma unidade de medida."
-		}
+    "issues": {
+        "unit_of_measurement_missmatch": {
+            "title": "{meter_entity} tem uma unidade de medida diferente de {export_entity}",
+            "description": "A unidade de medida de {meter_entity} é {meter_unit} e a unidade de medida de {export_entity} é {export_unit}. Todas as entidades devem ter a mesma unidade de medida."
+        }
     }
 }

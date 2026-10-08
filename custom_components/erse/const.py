@@ -4,6 +4,7 @@ DOMAIN = "erse"
 
 CONF_OPERATOR = "operator"
 CONF_INSTALLED_POWER = "installed_power"
+CONF_LARGE_FAMILY = "large_family"
 CONF_PLAN = "plan"
 CONF_CYCLE = "cycle"
 

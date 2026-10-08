@@ -26,6 +26,7 @@ from homeassistant.const import (
     UnitOfEnergy,
 )
 from homeassistant.core import callback
+from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.event import (
     async_track_state_change_event,
@@ -33,6 +34,7 @@ from homeassistant.helpers.event import (
 )
 from homeassistant.util import dt as dt_util
 from homeassistant.util import slugify
+from homeassistant.util.unit_conversion import EnergyConverter
 from homeassistant.components.sensor import (
     PLATFORM_SCHEMA,
     RestoreSensor,
@@ -50,6 +52,7 @@ from .const import (
     ATTR_TARIFFS,
     ATTR_UTILITY_METERS,
     CONF_METER_SUFFIX,
+    CONF_LARGE_FAMILY,
     CONF_EXPORT_METER,
     CONF_UTILITY_METERS,
     COST_PRECISION,
@@ -79,7 +82,10 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     for tariff in hass.data[DOMAIN][config_entry.entry_id].plano.tarifas:
         for meter_entity in config_entry.data[f"{tariff.name}{CONF_METER_SUFFIX}"]:
             entities.append(
-                TariffCost(hass, config_entry.entry_id, tariff, meter_entity)
+                TariffCost(
+                    hass, config_entry.entry_id, tariff, meter_entity,
+                    config_entry,
+                )
             )
 
     if CONF_EXPORT_METER in config_entry.data:
@@ -447,7 +453,7 @@ class NetMeterSensor(ERSEEntity, RestoreSensor):
 class TariffCost(ERSEMoneyEntity, SensorEntity):
     """Track cost of kWh for a given tariff"""
 
-    def __init__(self, hass, entry_id, tariff, meter_entity):
+    def __init__(self, hass, entry_id, tariff, meter_entity, config_entry):
         """Initialize cost tracker"""
 
         super().__init__(hass.data[DOMAIN][entry_id])
@@ -455,7 +461,13 @@ class TariffCost(ERSEMoneyEntity, SensorEntity):
         self._attr_unique_id = slugify(f"{entry_id} {meter_entity} cost")
 
         self._tariff = tariff
+        self._config_entry = config_entry
         self._meter_entity = meter_entity
+        self._energy_meters = list(dict.fromkeys(
+            meter
+            for plan_tariff in self._operator.plano.tarifas
+            for meter in config_entry.data[f"{plan_tariff.name}{CONF_METER_SUFFIX}"]
+        ))
 
     @property
     def extra_state_attributes(self):
@@ -467,33 +479,38 @@ class TariffCost(ERSEMoneyEntity, SensorEntity):
 
         @callback
         async def calc_costs(meter_state):
-            if (
-                meter_state
-                and ATTR_UNIT_OF_MEASUREMENT in meter_state.attributes
-                and meter_state.attributes[ATTR_UNIT_OF_MEASUREMENT]
-                in [
-                    UnitOfEnergy.WATT_HOUR,
-                    UnitOfEnergy.KILO_WATT_HOUR,
-                ]
-            ):
-                if meter_state.state in [STATE_UNAVAILABLE, STATE_UNKNOWN]:
-                    kwh = 0
-                elif (
-                    meter_state.attributes[ATTR_UNIT_OF_MEASUREMENT]
-                    == UnitOfEnergy.WATT_HOUR
-                ):
-                    kwh = float(meter_state.state) / 1000
-                else:
-                    kwh = float(meter_state.state)
-            else:
-                _LOGGER.error(
-                    "Could not retrieve tariff sensor state or the sensor is not an energy sensor (wrong unit) from %s",
-                    meter_state,
+            kwh = 0.0
+            total_kwh = 0.0
+            resets = []
+            for meter in self._energy_meters:
+                state = meter_state if meter == self._meter_entity else self.hass.states.get(meter)
+                if state is None or state.state in (STATE_UNAVAILABLE, STATE_UNKNOWN):
+                    self._attr_native_value = None
+                    self.async_write_ha_state()
+                    return
+                unit = state.attributes.get(ATTR_UNIT_OF_MEASUREMENT)
+                if unit not in EnergyConverter.VALID_UNITS:
+                    self._attr_native_value = None
+                    self.async_write_ha_state()
+                    return
+                meter_kwh = EnergyConverter.convert(
+                    float(state.state), unit, UnitOfEnergy.KILO_WATT_HOUR
                 )
-                kwh = 0
+                total_kwh += meter_kwh
+                if meter == self._meter_entity:
+                    kwh = meter_kwh
+                reset = dt_util.parse_datetime(str(state.attributes.get(ATTR_LAST_RESET)))
+                if reset is not None:
+                    resets.append(dt_util.as_local(reset))
 
+            # Estimate the bill through today, including the current billing day.
+            days = max(1, (dt_util.now().date() - max(resets).date()).days + 1) if resets else 30
             self._attr_native_value = self._operator.plano.custo_kWh_final(
-                self._tariff, kwh
+                self._tariff, kwh, familia_numerosa=self._config_entry.options.get(
+                    CONF_LARGE_FAMILY,
+                    self._config_entry.data.get(CONF_LARGE_FAMILY, False),
+                ),
+                total_kwh=total_kwh, dias=days,
             )
 
             _LOGGER.debug(
@@ -506,18 +523,41 @@ class TariffCost(ERSEMoneyEntity, SensorEntity):
 
         @callback
         async def async_increment_cost(event):
-            new_state = event.data.get("new_state")
-            await calc_costs(new_state)
+            # Other tariff meters also affect this meter's share of the allowance.
+            meter_state = (
+                event.data.get("new_state")
+                if event.data.get(ATTR_ENTITY_ID) == self._meter_entity
+                else self.hass.states.get(self._meter_entity)
+            )
+            await calc_costs(meter_state)
+
+        @callback
+        async def timer_update(_):
+            await calc_costs(self.hass.states.get(self._meter_entity))
+
+        self.async_on_remove(
+            async_dispatcher_connect(
+                self.hass, f"{DOMAIN}_{self._config_entry.entry_id}_options_updated",
+                lambda: self.hass.async_create_task(timer_update(None)),
+            )
+        )
 
         @callback
         async def initial_sync(_):
             meter_state = self.hass.states.get(self._meter_entity)
-            self._attr_name = meter_state.attributes.get("friendly_name")
+            if meter_state is not None:
+                self._attr_name = meter_state.attributes.get("friendly_name")
             await calc_costs(meter_state)
 
             self.async_on_remove(
                 async_track_state_change_event(
-                    self.hass, [self._meter_entity], async_increment_cost
+                    self.hass, self._energy_meters, async_increment_cost
+                )
+            )
+
+            self.async_on_remove(
+                async_track_time_change(
+                    self.hass, timer_update, hour=0, minute=0, second=0
                 )
             )
 

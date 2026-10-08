@@ -13,6 +13,7 @@ from pyerse.comercializador import POTENCIA, Comercializador
 from .const import (
     CONF_CYCLE,
     CONF_INSTALLED_POWER,
+    CONF_LARGE_FAMILY,
     CONF_METER_SUFFIX,
     CONF_OPERATOR,
     CONF_PLAN,
@@ -49,6 +50,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 data_schema=vol.Schema(
                     {
                         vol.Required(CONF_OPERATOR): str,
+                        vol.Optional(CONF_LARGE_FAMILY, default=False): bool,
                         vol.Required(
                             CONF_INSTALLED_POWER, default=str(POTENCIA[0])
                         ): selector.selector({"select": {"options": POTENCIAS}}),
@@ -172,6 +174,9 @@ class ERSEOptionsFlow(config_entries.OptionsFlow):
             config_entry.data[CONF_PLAN],
             config_entry.data[CONF_CYCLE],
         )
+        self.large_family = config_entry.options.get(
+            CONF_LARGE_FAMILY, config_entry.data.get(CONF_LARGE_FAMILY, False)
+        )
         self.costs = {
             CONF_POWER_COST: config_entry.options.get(
                 CONF_POWER_COST, config_entry.data[CONF_POWER_COST]
@@ -193,6 +198,7 @@ class ERSEOptionsFlow(config_entries.OptionsFlow):
             step_id="init",
             data_schema=vol.Schema(
                 {
+                    vol.Optional(CONF_LARGE_FAMILY, default=self.large_family): bool,
                     vol.Required(
                         CONF_POWER_COST, default=self.costs[CONF_POWER_COST]
                     ): vol.Coerce(float),
