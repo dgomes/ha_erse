@@ -17,6 +17,6 @@
     "pyerse==0.0.8"
   ],
   "ssdp": [],
-  "version": "2.2.7",
+  "version": "2.3.0",
   "zeroconf": []
 }
